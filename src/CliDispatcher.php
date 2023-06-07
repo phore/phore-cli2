@@ -2,17 +2,21 @@
 
 namespace Phore\Cli;
 
+use Phore\Cli\Exception\CliException;
+use Phore\Cli\Types\T_CommandGroup;
+use Phore\Cli\Types\T_CommandSet;
+
 class CliDispatcher
 {
 
 
-    private static CommandRegistry $commandRegistry;
+    private static T_CommandSet $commandSet;
 
 
-    public static function getCommandRegistry() : CommandRegistry {
-        if ( ! isset (self::$commandRegistry))
-            self::$commandRegistry = new CommandRegistry();
-        return self::$commandRegistry;
+    public static function getCommandSet() : T_CommandSet {
+        if ( ! isset (self::$commandSet))
+            self::$commandSet = new T_CommandSet();
+        return self::$commandSet;
     }
 
     public static function autoload() {
@@ -21,25 +25,16 @@ class CliDispatcher
 
     public static function addClass(string $className)
     {
-        self::getCommandRegistry()->addClass($className);
+        self::getCommandSet()->addCommand(T_CommandGroup::CreateFromClassName($className));
     }
 
     public static function run(array $argv, int $argc)
     {
 
-        if ($command === null)
-            throw new \InvalidArgumentException("Module CommandModule from library 'brace/command' is not part of app. Run addModule() to add it.");
-
-        array_shift($argv);
-        $cmd = array_shift($argv);
-        if ($cmd === null)
-            $cmd = "help";
-
-        if ( ! isset ($command->commands[$cmd])) {
-            echo "Command undefined '$cmd'!\n";
-            exit(255);
+        try {
+            self::getCommandSet()->dispatch($argv);
+        } catch (CliException $e) {
+            $e->visualize();
         }
-        $command->runCommand($cmd, $argv);
-        echo "\n";
     }
 }

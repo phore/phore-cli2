@@ -9,7 +9,9 @@ class T_Parameter
     public function __construct(
         public string $name,
         public string $description,
-        public bool $isOptional = true) {
+        public bool $isOptional = true,
+        public ?\ReflectionParameter $reflectionParameter = null
+    ) {
 
     }
 
@@ -24,11 +26,12 @@ class T_Parameter
     public static function CreateFromReflection(\ReflectionParameter $parameter) : self {
         $pAttr = $parameter->getAttributes(CliParameter::class);
         if (count($pAttr) === 0){
-            return new self($parameter->getName(), "<no description>", $parameter->isOptional());
+            return new self($parameter->getName(), "<no description>", $parameter->isOptional(), $parameter);
         }
+
         /* @var $param CliParameter */
         $param = $pAttr[0]->newInstance();
-        return new self($param->name, $param->desc, $parameter->isOptional());
+        return new self($param->name, $param->desc, $parameter->isOptional(), $parameter);
     }
 
 }

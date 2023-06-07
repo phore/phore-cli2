@@ -4,15 +4,15 @@ namespace Phore\Cli\Types;
 
 use Phore\Cli\Exception\CliException;
 
-class T_CommandSet
+class T_CommandSet extends T_CommandGroup
 {
 
-        public array $commands = [];
 
         public function __construct(
-            public string $name,
-            public string $desc = "<no description>"
-        ){}
+             string $desc = "<no description>"
+        ){
+            parent::__construct("", $desc);
+        }
 
         public function addCommand(T_Command $command) : void
         {
@@ -20,41 +20,33 @@ class T_CommandSet
         }
 
         public function getHelp() : string {
-            $sig =  "\t" . $this->name . "\n\t\t" . $this->desc . "\n";
+            $sig =  "\n" . $this->name . " [group_name] [--parameters] [command]\n\n" . $this->desc . "\n";
             foreach ($this->commands as $command) {
-                $sig .= "\n\t\t" . $command->getHelp();
+                $sig .= "\n\n" . $command->getHelp();
             }
             return $sig;
         }
 
-        public function dispatch(array $argv, array $arguments = []) {
+        public function setName($naem) {
+            $this->name = $naem;
+        }
 
-            if ($argv[0] === "help" || count($argv) === 0) {
+        public function dispatch(array $argv, array &$arguments = [], $object = null) : void {
+
+
+            $command = $this->getNextCommand($argv, $arguments);
+
+            if ($command === null) {
                 echo $this->getHelp();
                 return;
             }
-
-
-            while($curArg = array_shift($argv)) {
-                if (startsWith($curArg, "--")) {
-                    $arguments[$curArg] = array_shift($argv);
-                    continue;
+            foreach ($this->commands as $cmd) {
+                if ($cmd->name === $command) {
+                    $cmd->dispatch($argv, $arguments, $object);
+                    return;
                 }
-                if (startsWith($curArg, "-")) {
-                    $arguments[$curArg] = true;
-                    continue;
-                }
-                // find command by name in $this->commands
-                foreach ($this->commands as $command) {
-                    if ($command->name === $curArg) {
-                        return $command->dispatch($argv, $arguments);
-                    }
-                }
-                throw new CliException("Unknown command '$curArg'");
-
             }
-
-
+            throw new CliException("Command '$command' not found.");
         }
 
 }

@@ -3,15 +3,20 @@
 namespace Phore\Cli\Types;
 
 use Phore\Cli\Annotation\CliParameter;
+use Phore\Cli\Exception\CliException;
 
 class T_CommandGroup extends T_Command
 {
 
+    /**
+     * @var T_Command[]
+     */
     public array $commands = [];
 
     public function __construct(
          string $name,
-         string $desc = "<no description>"
+         string $desc = "<no description>",
+         private ?\ReflectionClass $reflectionClass = null
     ){
         parent::__construct($name, $desc);
     }
@@ -25,9 +30,9 @@ class T_CommandGroup extends T_Command
 
     public function getHelp(): string
     {
-        $stub = "\t" . $this->name . "\n\t\t" . $this->desc . "\n";
+        $stub = "" . $this->name . "\t" . $this->desc . "\n";
         foreach ($this->parameters as $parameter) {
-            $stub .= "\n\t\t" . $parameter->getHelp();
+            $stub .= "\n\t" . $parameter->getHelp();
         }
         foreach ($this->commands as $command) {
             $stub .= "\n" . $command->getHelp();
@@ -35,10 +40,28 @@ class T_CommandGroup extends T_Command
         return $stub;
     }
 
+    public function dispatch(array $argv, array &$arguments, $object = null) : void
+    {
+        $command = $this->getNextCommand($argv, $arguments);
+        if ($command === null) {
+            echo $this->getHelp();
+            return;
+        }
+        $object = $this->reflectionClass->newInstance(...$this->buildParametersFor($this->reflectionClass->getConstructor(), $arguments));
+
+        foreach ($this->commands as $cmd) {
+            if ($cmd->name === $command) {
+                $cmd->dispatch($argv, $arguments, $object);
+                return;
+            }
+        }
+        throw new CliException("Command '$command' not found.");
+    }
+
 
     public static function CreateFromClassName(string $className) : self {
         $reflection = new \ReflectionClass($className);
-        $cmdGroup = new self($className);
+        $cmdGroup = new self(strtolower($className), "<no description>", $reflection);
 
         // Parse Constructor Parameters
         foreach ($reflection->getConstructor()->getParameters() as $parameter) {
@@ -46,15 +69,11 @@ class T_CommandGroup extends T_Command
         }
 
         foreach ($reflection->getMethods(\ReflectionMethod::IS_PUBLIC) as $method) {
-            $cmdAttr = $method->getAttributes(\Phore\Cli\Annotation\CliCommand::class);
-            if (count($cmdAttr) === 0)
+            if ($method->getName() === "__construct")
                 continue;
-            $cmd = new T_Command($cmdAttr[0]->newInstance()->name, $cmdAttr[0]->newInstance()->desc);
-            foreach ($method->getParameters() as $parameter) {
-                $cmd->addParameter(T_Parameter::CreateFromReflection($parameter));
-            }
-            $cmdGroup->addCommand($cmd);
+            $cmdGroup->addCommand(T_Command::CreateFromReflection($method));
         }
+        return $cmdGroup;
     }
 
 }

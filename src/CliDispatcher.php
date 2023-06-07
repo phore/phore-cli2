@@ -30,9 +30,12 @@ class CliDispatcher
 
     public static function run(array $argv, int $argc)
     {
+        $name = array_shift($argv);
+        self::getCommandSet()->setName($name);
 
         try {
             self::getCommandSet()->dispatch($argv);
+            echo "\n";
         } catch (CliException $e) {
             $e->visualize();
         }

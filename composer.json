@@ -1,6 +1,6 @@
 {
-  "name": "phore/cli",
-  "description": "Transform json/xml service responds to exceptions",
+  "name": "phore/cli2",
+  "description": "",
   "license": "MIT",
   "authors": [
     { "name": "Matthias Leuffen", "email": "m@tth.es" }

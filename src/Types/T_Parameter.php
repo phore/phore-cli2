@@ -20,7 +20,7 @@ class T_Parameter
     }
 
     public function getHelp() : string {
-        return $this->getLongName() . " " . $this->desc;
+        return $this->getLongName() . " [value] " . $this->desc;
     }
 
     public static function CreateFromReflection(\ReflectionParameter $parameter) : self {

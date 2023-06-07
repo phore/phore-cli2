@@ -6,6 +6,14 @@ class CliDispatcher
 {
 
 
+    private static CommandRegistry $commandRegistry;
+
+
+    public static function getCommandRegistry() : CommandRegistry {
+        if ( ! isset (self::$commandRegistry))
+            self::$commandRegistry = new CommandRegistry();
+        return self::$commandRegistry;
+    }
 
     public static function autoload() {
 
@@ -13,7 +21,7 @@ class CliDispatcher
 
     public static function addClass(string $className)
     {
-        $module->registerCommands();
+        self::getCommandRegistry()->addClass($className);
     }
 
     public static function run(array $argv, int $argc)

@@ -61,7 +61,7 @@ class T_CommandGroup extends T_Command
 
     public static function CreateFromClassName(string $className) : self {
         $reflection = new \ReflectionClass($className);
-        $cmdGroup = new self(strtolower($className), "<no description>", $reflection);
+        $cmdGroup = new self(strtolower($reflection->getShortName()), "<no description>", $reflection);
 
         // Parse Constructor Parameters
         foreach ($reflection->getConstructor()->getParameters() as $parameter) {

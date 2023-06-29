@@ -49,7 +49,9 @@ class T_Command
     }
 
 
-    protected function buildParametersFor(\ReflectionFunction|\ReflectionMethod $fn, array $arguments) {
+    protected function buildParametersFor(\ReflectionFunction|\ReflectionMethod|null $fn, array $arguments) {
+        if ($fn === null)
+            return [];
         $ret = [];
         foreach($this->parameters as $parameter) {
             if (isset ($arguments[$parameter->getLongName()])) {

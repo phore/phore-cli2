@@ -64,7 +64,7 @@ class T_CommandGroup extends T_Command
         $cmdGroup = new self(strtolower($reflection->getShortName()), "<no description>", $reflection);
 
         // Parse Constructor Parameters
-        foreach ($reflection->getConstructor()->getParameters() as $parameter) {
+        foreach ($reflection->getConstructor()?->getParameters() ?? [] as $parameter) {
             $cmdGroup->addParameter(T_Parameter::CreateFromReflection($parameter));
         }
 

@@ -2,7 +2,9 @@
 
 namespace Phore\Cli;
 
+use Http\Client\Exception;
 use Phore\Cli\Exception\CliException;
+use Phore\Cli\Format\ExceptionVisualizer;
 use Phore\Cli\Types\T_CommandGroup;
 use Phore\Cli\Types\T_CommandSet;
 
@@ -30,32 +32,36 @@ class CliDispatcher
 
     public static function run(array $argv, int $argc)
     {
-        $name = array_shift($argv);
-        self::getCommandSet()->setName($name);
-
-        $presetContainer = new CliPreset();
-        self::getCommandSet()->addCliPreset($presetContainer);
-
-        if (file_exists(getcwd() . "/cli_presets.ini")) {
-            $presetContainer->loadPresets(getcwd() . "/cli_presets.ini");
-        }
-
-        // Check for preset
-        $arguments = [];
-        if (str_starts_with($argv[0] ?? "", ":")) {
-            $presetName = array_shift($argv);
-            $newArgv = $presetContainer->getPreset($presetName, $arguments);
-            if ($newArgv !== null) {
-                array_unshift($argv, ...$newArgv);
-            }
-        }
-
+        $exceptionVisualizer = new ExceptionVisualizer();
 
         try {
+            $name = array_shift($argv);
+            self::getCommandSet()->setName($name);
+
+            $presetContainer = new CliPreset();
+            self::getCommandSet()->addCliPreset($presetContainer);
+
+            if (file_exists(getcwd() . "/cli_presets.ini")) {
+                $presetContainer->loadPresets(getcwd() . "/cli_presets.ini");
+            }
+
+            // Check for preset
+            $arguments = [];
+            if (str_starts_with($argv[0] ?? "", ":")) {
+                $presetName = array_shift($argv);
+                $newArgv = $presetContainer->getPreset($presetName, $arguments);
+                if ($newArgv !== null) {
+                    array_unshift($argv, ...$newArgv);
+                }
+            }
+
+
             self::getCommandSet()->dispatch($argv, $arguments);
             echo "\n";
-        } catch (CliException $e) {
-            $e->visualize();
+
+        } catch (\Exception|\Error $e) {
+            $exceptionVisualizer->visualize($e);
         }
+
     }
 }

@@ -2,6 +2,7 @@
 
 namespace Phore\Cli\Types;
 
+use Phore\Cli\Annotation\CliParameter;
 use Phore\Cli\Exception\CliException;
 
 class T_Command
@@ -11,6 +12,8 @@ class T_Command
      * @var T_Parameter[]
      */
     public array $parameters = [];
+
+    public bool $hasArgvParameters = false;
 
     public function __construct(
         public string $name,
@@ -26,7 +29,10 @@ class T_Command
 
 
     public function getHelp() : string {
-        $sig =  "\n\t" . $this->name . "\t" . $this->desc . "";
+        $argv = "";
+        if ($this->hasArgvParameters)
+            $argv = "[argv] ";
+        $sig =  "\n\t" . $this->name . $argv . "\t" . $this->desc . "";
         foreach ($this->parameters as $parameter) {
             $sig .= "\n\t\t" . $parameter->getHelp();
         }
@@ -53,15 +59,26 @@ class T_Command
         if ($fn === null)
             return [];
         $ret = [];
-        foreach($this->parameters as $parameter) {
-            if (isset ($arguments[$parameter->getLongName()])) {
-                $ret[] = $arguments[$parameter->getLongName()];
+
+        foreach($fn->getParameters() as $parameter) {
+            if ($parameter->name === "argv") {
+                $ret[] = $arguments["argv"];
                 continue;
             }
-            if ($parameter->isOptional) {
-                $ret[] = $parameter->reflectionParameter->getDefaultValue();
-                continue;
+            $param = array_filter($this->parameters, fn(T_Parameter $p) => $p->name === $parameter->name);
+            assert ($param instanceof T_Parameter);
+            if (count ($param) === 1)  {
+                if (isset($arguments[$param->getLongName()])) {
+
+                    $ret[]=  $arguments[$param->getLongName()];
+                    continue;
+                }
+                if ($param->isOptional) {
+                    $ret[] = $param->reflectionParameter->getDefaultValue();
+                    continue;
+                }
             }
+
             throw new CliException("Missing required parameter: " . $parameter->getLongName());
 
         }
@@ -69,7 +86,11 @@ class T_Command
     }
 
     public function dispatch(array $argv, array &$arguments, $object = null) : void {
-        $this->getNextCommand($argv, $arguments);
+        $curCmd = $this->getNextCommand($argv, $arguments);
+        array_unshift($argv, $curCmd);
+
+        // Make argv available
+        $arguments["argv"] = $argv;
 
         if ($object !== null) {
             $object->{$this->reflectionFunction->getName()}(...$this->buildParametersFor($this->reflectionFunction, $arguments));
@@ -83,6 +104,10 @@ class T_Command
     public static function CreateFromReflection(\ReflectionMethod|\ReflectionFunction $method) : self {
         $cmd = new self($method->getName(), "", $method);
         foreach ($method->getParameters() as $parameter) {
+            if ($parameter->name === "argv") {
+                $cmd->hasArgvParameters = true;
+                continue;
+            }
             $cmd->addParameter(T_Parameter::CreateFromReflection($parameter));
         }
         return $cmd;

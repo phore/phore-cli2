@@ -26,7 +26,7 @@ class T_Command
 
 
     public function getHelp() : string {
-        $sig =  "\n\t" . $this->name . "\n\t\t" . $this->desc . "\n";
+        $sig =  "\n\t" . $this->name . "\t" . $this->desc . "";
         foreach ($this->parameters as $parameter) {
             $sig .= "\n\t\t" . $parameter->getHelp();
         }
@@ -81,7 +81,7 @@ class T_Command
 
 
     public static function CreateFromReflection(\ReflectionMethod|\ReflectionFunction $method) : self {
-        $cmd = new self($method->getName(), "<no description>", $method);
+        $cmd = new self($method->getName(), "", $method);
         foreach ($method->getParameters() as $parameter) {
             $cmd->addParameter(T_Parameter::CreateFromReflection($parameter));
         }

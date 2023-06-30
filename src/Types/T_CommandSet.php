@@ -10,7 +10,7 @@ class T_CommandSet extends T_CommandGroup
 
 
         public function __construct(
-             string $desc = "<no description>"
+             string $desc = ""
         ){
             parent::__construct("", $desc);
         }
@@ -30,10 +30,10 @@ class T_CommandSet extends T_CommandGroup
         public function getHelp() : string {
             $sig =  "\n" . $this->name . " [group_name] [--parameters] [command]\n\n" . $this->desc . "\n";
             foreach ($this->commands as $command) {
-                $sig .= "\n\n" . $command->getHelp();
+                $sig .= "" . $command->getHelp();
             }
             foreach($this->cliPresets as $preset) {
-                $sig .= "\n\n" . $preset->getHelp();
+                $sig .= "" . $preset->getHelp();
             }
             return $sig;
         }

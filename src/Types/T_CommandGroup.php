@@ -15,7 +15,7 @@ class T_CommandGroup extends T_Command
 
     public function __construct(
          string $name,
-         string $desc = "<no description>",
+         string $desc = "",
          private ?\ReflectionClass $reflectionClass = null
     ){
         parent::__construct($name, $desc);
@@ -30,12 +30,12 @@ class T_CommandGroup extends T_Command
 
     public function getHelp(): string
     {
-        $stub = "" . $this->name . "\t" . $this->desc . "\n";
+        $stub = "\n" . $this->name . "\t" . $this->desc . "";
         foreach ($this->parameters as $parameter) {
             $stub .= "\n\t" . $parameter->getHelp();
         }
         foreach ($this->commands as $command) {
-            $stub .= "\n" . $command->getHelp();
+            $stub .= "" . $command->getHelp();
         }
         return $stub;
     }
@@ -61,7 +61,7 @@ class T_CommandGroup extends T_Command
 
     public static function CreateFromClassName(string $className) : self {
         $reflection = new \ReflectionClass($className);
-        $cmdGroup = new self(strtolower($reflection->getShortName()), "<no description>", $reflection);
+        $cmdGroup = new self(strtolower($reflection->getShortName()), "", $reflection);
 
         // Parse Constructor Parameters
         foreach ($reflection->getConstructor()?->getParameters() ?? [] as $parameter) {

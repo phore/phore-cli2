@@ -66,8 +66,10 @@ class T_Command
                 continue;
             }
             $param = array_filter($this->parameters, fn(T_Parameter $p) => $p->name === $parameter->name);
-            assert ($param instanceof T_Parameter);
+
             if (count ($param) === 1)  {
+                $param = $param[0];
+                assert ($param instanceof T_Parameter);
                 if (isset($arguments[$param->getLongName()])) {
 
                     $ret[]=  $arguments[$param->getLongName()];
@@ -87,7 +89,8 @@ class T_Command
 
     public function dispatch(array $argv, array &$arguments, $object = null) : void {
         $curCmd = $this->getNextCommand($argv, $arguments);
-        array_unshift($argv, $curCmd);
+        if ($curCmd !== null)
+            array_unshift($argv, $curCmd);
 
         // Make argv available
         $arguments["argv"] = $argv;

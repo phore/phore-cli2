@@ -31,7 +31,7 @@ class T_Command
     public function getHelp() : string {
         $argv = "";
         if ($this->hasArgvParameters)
-            $argv = "[argv] ";
+            $argv = "\t[argv] ";
         $sig =  "\n\t" . $this->name . $argv . "\t" . $this->desc . "";
         foreach ($this->parameters as $parameter) {
             $sig .= "\n\t\t" . $parameter->getHelp();

@@ -81,7 +81,7 @@ class T_Command
                 }
             }
 
-            throw new CliException("Missing required parameter: " . $parameter->getLongName());
+            throw new CliException("Missing required parameter: " . $parameter->getName());
 
         }
         return $ret;

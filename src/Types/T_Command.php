@@ -65,7 +65,7 @@ class T_Command
                 $ret[] = $arguments["argv"];
                 continue;
             }
-            $param = array_filter($this->parameters, fn(T_Parameter $p) => $p->name === $parameter->name);
+            $param = array_values(array_filter($this->parameters, fn(T_Parameter $p) => $p->name === $parameter->name));
 
             if (count ($param) === 1)  {
                 $param = $param[0];

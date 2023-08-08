@@ -13,6 +13,13 @@ class CLIntputHandler
         return $val;
     }
 
+    public function out(string $msg) {
+        $blueBackground = "\033[44m";  // Blue background
+        $blackText = "\033[30m";      // Black text
+        $reset = "\033[0m";           // Reset to terminal's default
+
+        echo $blueBackground . $blackText . $msg . $reset . PHP_EOL;
+    }
 
     public function askMultiLine(string $question) : string {
         echo "$question: (end with empty CTRL-X)\n";

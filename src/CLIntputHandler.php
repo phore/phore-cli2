@@ -4,9 +4,9 @@ namespace Phore\Cli;
 
 class CLIntputHandler
 {
-    const ANSI_BOLD = '\033[1m';
+    const ANSI_BOLD = "\033[1m";
 
-    const ANSI_RESET = '\033[0m';
+    const ANSI_RESET = "\033[0m";
 
     public function askLine(string $question) : string {
         $val = readline($question . ": ");
@@ -49,7 +49,8 @@ class CLIntputHandler
             $question .= " (Y/n) ";
         else
             $question .= " (y/N) ";
-        $val = readline(self::ANSI_BOLD . $question .  self::ANSI_RESET);
+        file_put_contents("php://stderr", PHP_EOL . self::ANSI_BOLD . $question .  self::ANSI_RESET);
+        $val = readline();
         if ($val === "y")
             return true;
         if ($val === "n")

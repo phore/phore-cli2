@@ -8,7 +8,8 @@ class CliTableOutputFormat {
     public function __construct(array $config = [])
     {
         // Default configuration uses spaces as separators.
-        $this->config = array_merge(['separator' => ' '], $config);
+        // Add a new configuration option for row numbers.
+        $this->config = array_merge(['separator' => ' ', 'rowNumbers' => true], $config);
     }
 
     public function print_as_table(array $data, bool $return = false): ?string
@@ -35,6 +36,9 @@ class CliTableOutputFormat {
         }
 
         // Create the header row.
+        if ($this->config['rowNumbers']) {
+            $output .= str_pad('#', 3) . $separator;
+        }
         foreach ($columnWidths as $key => $width) {
             $output .= str_pad($key, $width) . $separator;
         }
@@ -42,8 +46,13 @@ class CliTableOutputFormat {
         $output .= str_repeat('-', $totalWidth) . PHP_EOL;
 
         // Print the data rows.
+        $rowNumber = 1;
         foreach ($data as $row) {
             $row = (array)$row;
+            if ($this->config['rowNumbers']) {
+                $output .= str_pad((string)$rowNumber, 3) . $separator;
+                $rowNumber++;
+            }
             foreach ($columnWidths as $key => $width) {
                 $value = $this->formatValue($row[$key] ?? '');
                 $output .= str_pad(substr($value, 0, $width), $width) . $separator;

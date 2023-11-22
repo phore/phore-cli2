@@ -72,9 +72,12 @@ class T_Command
                 assert ($param instanceof T_Parameter);
                 if (isset($arguments[$param->getLongName()])) {
 
+
                     $ret[]=  $arguments[$param->getLongName()];
                     continue;
                 }
+                // Handle boolean parameters
+
                 if ($param->isOptional) {
                     $ret[] = $param->reflectionParameter->getDefaultValue();
                     continue;

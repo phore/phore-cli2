@@ -71,6 +71,12 @@ class CliTableOutputFormat {
 
     private function formatValue($value): string
     {
+        // Convert array of objects to array of arrays.
+        if (is_array($value) && count($value) > 0 && is_object($value[0])) {
+            $value = array_map(function ($item) {
+                return (array)$item;
+            }, $value);
+        }
         if (is_array($value)) {
             $value = implode(',', $value);
         } elseif (is_object($value) || is_array($value)) {

@@ -25,22 +25,22 @@ class CliTableOutputFormat {
         foreach ($data as $row) {
             foreach ($row as $key => $value) {
                 $value = $this->formatValue($value);
-                $columnWidths[$key] = max($columnWidths[$key] ?? 0, strlen($key), strlen($value));
+                $columnWidths[$key] = max($columnWidths[$key] ?? 0, $this->strWidth($key), $this->strWidth($value));
             }
         }
 
         // Adjust column widths based on the terminal width.
-        $totalWidth = array_sum($columnWidths) + (count($columnWidths) - 1) * strlen($separator);
+        $totalWidth = array_sum($columnWidths) + (count($columnWidths) - 1) * $this->strWidth($separator);
         if ($totalWidth > $terminalWidth) {
-            $columnWidths = $this->adjustColumnWidths($columnWidths, $terminalWidth, strlen($separator));
+            $columnWidths = $this->adjustColumnWidths($columnWidths, $terminalWidth, $this->strWidth($separator));
         }
 
         // Create the header row.
         if ($this->config['rowNumbers']) {
-            $output .= str_pad('#', 3) . $separator;
+            $output .= str_pad('#', 3, ' ', STR_PAD_LEFT) . $separator;
         }
         foreach ($columnWidths as $key => $width) {
-            $output .= str_pad($key, $width) . $separator;
+            $output .= $this->padString($key, $width) . $separator;
         }
         $output = rtrim($output, $separator) . PHP_EOL;
         $output .= str_repeat('-', $totalWidth) . PHP_EOL;
@@ -50,12 +50,12 @@ class CliTableOutputFormat {
         foreach ($data as $row) {
             $row = (array)$row;
             if ($this->config['rowNumbers']) {
-                $output .= str_pad((string)$rowNumber, 3) . $separator;
+                $output .= str_pad((string)$rowNumber, 3, ' ', STR_PAD_LEFT) . $separator;
                 $rowNumber++;
             }
             foreach ($columnWidths as $key => $width) {
                 $value = $this->formatValue($row[$key] ?? '');
-                $output .= str_pad(substr($value, 0, $width), $width) . $separator;
+                $output .= $this->padString($value, $width) . $separator;
             }
             $output = rtrim($output, $separator) . PHP_EOL;
         }
@@ -103,4 +103,16 @@ class CliTableOutputFormat {
 
         return $columnWidths;
     }
+
+    private function strWidth(string $str): int
+    {
+        return mb_strwidth($str, 'UTF-8');
+    }
+
+    private function padString(string $str, int $width): string
+    {
+        $padding = $width - $this->strWidth($str);
+        return $str . str_repeat(' ', $padding);
+    }
 }
+

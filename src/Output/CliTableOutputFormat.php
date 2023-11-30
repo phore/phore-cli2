@@ -112,6 +112,8 @@ class CliTableOutputFormat {
     private function padString(string $str, int $width): string
     {
         $padding = $width - $this->strWidth($str);
+        if ($padding < 0 )
+            $padding = 0;
         return $str . str_repeat(' ', $padding);
     }
 }

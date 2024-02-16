@@ -21,7 +21,7 @@ class Out
     public static function TextDanger(string $text) {
         return "\033[31m$text\033[0m";
     }
-    public static function TestWarning(string $text) {
+    public static function TextWarning(string $text) {
         return "\033[33m$text\033[0m";
     }
     

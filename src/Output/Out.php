@@ -17,4 +17,12 @@ class Out
         return $of->print_as_table($data, $return);
     }
     
+    
+    public static function TextDanger(string $text) {
+        return "\033[31m$text\033[0m";
+    }
+    public static function TestWarning(string $text) {
+        return "\033[33m$text\033[0m";
+    }
+    
 }

@@ -33,4 +33,12 @@ class Out
         return null;
     }
     
+    public static function TextSuccess(string $text, bool $return = false) : ?string {
+        $text =  "\033[32m$text\033[0m\n";
+        if ($return)
+            return $text;
+        echo $text;
+        return null;
+    }
+    
 }

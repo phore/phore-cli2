@@ -12,19 +12,27 @@ class CliTableOutputFormat {
         $this->config = array_merge(['separator' => ' ', 'rowNumbers' => true], $config);
     }
 
-    public function print_as_table(array $data, bool $return = false): ?string
+    public function print_as_table(array $data, bool $return = false, array|null $columns = null): ?string
     {
+        if ($columns !== null) {
+            $data = array_map(function ($row) use ($columns) {
+                return array_filter($row, function ($key) use ($columns) {
+                    return in_array($key, $columns);
+                }, ARRAY_FILTER_USE_KEY);
+            }, $data);
+        }
+
         // Get the maximum width of the command line.
         $terminalWidth = exec('tput cols') ?: 80;
         // Prepare the output variable.
         $output = '';
-        $separator = $this->config['separator'] === ':' ? ':' : ' ';
+        $separator = $this->config['separator']; // === ':' ? ':' : ' ';
 
         // Find the longest key to set the column width.
         $columnWidths = [];
         foreach ($data as $row) {
             foreach ($row as $key => $value) {
-                $value = $this->formatValue($value);
+                $value = $this->formatValue($value) . "  ";
                 $columnWidths[$key] = max($columnWidths[$key] ?? 0, $this->strWidth($key), $this->strWidth($value));
             }
         }

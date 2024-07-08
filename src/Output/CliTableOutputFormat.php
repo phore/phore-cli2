@@ -16,7 +16,7 @@ class CliTableOutputFormat {
     {
         if ($columns !== null) {
             $data = array_map(function ($row) use ($columns) {
-                return array_filter($row, function ($key) use ($columns) {
+                return array_filter((array)$row, function ($key) use ($columns) {
                     return in_array($key, $columns);
                 }, ARRAY_FILTER_USE_KEY);
             }, $data);

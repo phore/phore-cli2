@@ -30,8 +30,20 @@ class CliDispatcher
         self::getCommandSet()->addCommand(T_CommandGroup::CreateFromClassName($className));
     }
 
-    public static function run(array $argv, int $argc)
+
+    /**
+     * Run a command
+     * 
+     * If used manually: pass each argument as array element
+     * 
+     * @param array $argv
+     * @param int|null $argc
+     * @return void
+     */
+    public static function run(array $argv, int $argc = null)
     {
+        if ($argc === null)
+            $argc = count($argv);
         $exceptionVisualizer = new ExceptionVisualizer();
 
         try {

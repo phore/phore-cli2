@@ -15,6 +15,8 @@ class CliPreset
     public function loadPresets($iniFile) : void
     {
         $this->presets = parse_ini_file($iniFile, true);
+        if ($this->presets === false)
+            throw new \InvalidArgumentException("Failed to load presets from '$iniFile': " . error_get_last()["message"]);
     }
 
 
@@ -33,7 +35,9 @@ class CliPreset
                 $ret = explode(" ", $value);
                 continue;
             }
-            $arguments[$key] = $value;
+            if ( ! isset ($arguments[$key]))
+                $arguments[$key] = $value; // Only set if not already set
+
         }
         return $ret;
     }

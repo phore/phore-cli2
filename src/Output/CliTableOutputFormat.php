@@ -39,10 +39,14 @@ class CliTableOutputFormat {
 
         // Adjust column widths based on the terminal width.
         $totalWidth = array_sum($columnWidths) + (count($columnWidths) - 1) * $this->strWidth($separator);
+        if ($totalWidth === -1)
+            $totalWidth = 11; // Empty table
         if ($totalWidth > $terminalWidth) {
             $columnWidths = $this->adjustColumnWidths($columnWidths, $terminalWidth, $this->strWidth($separator));
         }
 
+        
+        
         // Create the header row.
         if ($this->config['rowNumbers']) {
             $output .= str_pad('#', 3, ' ', STR_PAD_LEFT) . $separator;

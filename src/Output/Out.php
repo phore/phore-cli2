@@ -17,6 +17,12 @@ class Out
         return $of->print_as_table($data, $return, $columns);
     }
 
+    private static $markdown = true;
+    
+    public static function ParseMarkdown($value = true) {
+        self::$markdown = $value;
+    }
+    
 
     /**
      * Trys to find Markdown *italiq* **bold**  text and translate it to terminal bold text
@@ -26,15 +32,16 @@ class Out
      * @return string|null
      */
     private static function translateMarkdown(string $text) : ?string {
-        $text =  preg_replace("/\*\*(.*?)\*\*/", "\033[1m$1\033[0m", $text); // Bold
+        if ( ! self::$markdown)
+            return $text;
+        $text =  preg_replace("/(^|\s)\*\*(.*?)\*\*(\s|$)/", "\033[1m$2\033[0m", $text); // Bold
         // Italiq
-        $text = preg_replace("/\*(.*?)\*/", "\033[3m$1\033[0m", $text);
+        $text = preg_replace("/(^|\s)\*(.*?)\*(\s|$)/", "\033[3m$2\033[0m", $text);
         // Both
-        $text = preg_replace("/\*\*\*(.*?)\*\*\*/", "\033[1m\033[3m$1\033[0m", $text);
-
+        $text = preg_replace("/(^|\s)\*\*\*(.*?)\*\*\*(\s|$)/", "\033[1m\033[3m$2\033[0m", $text);
+        
         // Underline biy _text_
-        $text = preg_replace("/\_(.*?)\_/i", "\033[4m$1\033[0m", $text);
-
+        $text = preg_replace("/(^|\s)\_(.*?)\_(\s|$)/i", "\033[4m$2\033[0m", $text);
         return $text;
     }
 

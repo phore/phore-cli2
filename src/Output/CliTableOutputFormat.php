@@ -9,7 +9,7 @@ class CliTableOutputFormat {
     {
         // Default configuration uses spaces as separators.
         // Add a new configuration option for row numbers.
-        $this->config = array_merge(['separator' => ' ', 'rowNumbers' => true], $config);
+        $this->config = array_merge(['separator' => '  ', 'rowNumbers' => true], $config);
     }
 
     public function print_as_table(array $data, bool $return = false, array|null $columns = null): ?string
@@ -38,7 +38,7 @@ class CliTableOutputFormat {
         }
 
         // Adjust column widths based on the terminal width.
-        $totalWidth = array_sum($columnWidths) + (count($columnWidths) - 1) * $this->strWidth($separator);
+        $totalWidth = array_sum($columnWidths) + (count($columnWidths) + 1) * $this->strWidth($separator);
         if ($totalWidth === -1)
             $totalWidth = 11; // Empty table
         if ($totalWidth > $terminalWidth) {

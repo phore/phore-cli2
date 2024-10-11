@@ -93,6 +93,8 @@ class CliTableOutputFormat {
             $value = implode(',', $value);
         } elseif (is_object($value) || is_array($value)) {
             $value = json_encode($value);
+        } else if (is_float($value)) {
+            $value = number_format($value, 2, ".", "");
         } else {
             $value = (string) $value;
         }
@@ -123,10 +125,17 @@ class CliTableOutputFormat {
 
     private function padString(string $str, int $width): string
     {
-        $padding = $width - $this->strWidth($str);
-        if ($padding < 0 )
-            $padding = 0;
-        return $str . str_repeat(' ', $padding);
+        if (is_numeric($str)) {
+            $padding = $width - $this->strWidth($str);
+            if ($padding < 0)
+                $padding = 0;
+            return str_repeat(' ', $padding) . $str;
+        } else {
+            $padding = $width - $this->strWidth($str);
+            if ($padding < 0)
+                $padding = 0;
+            return $str . str_repeat(' ', $padding);
+        }
     }
 }
 

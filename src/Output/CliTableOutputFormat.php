@@ -31,6 +31,7 @@ class CliTableOutputFormat {
         // Find the longest key to set the column width.
         $columnWidths = [];
         foreach ($data as $row) {
+            $row = (array)$row;
             foreach ($row as $key => $value) {
                 $value = $this->formatValue($value) . "  ";
                 $columnWidths[$key] = max($columnWidths[$key] ?? 0, $this->strWidth($key), $this->strWidth($value));
@@ -84,7 +85,7 @@ class CliTableOutputFormat {
     private function formatValue($value): string
     {
         // Convert array of objects to array of arrays.
-        if (is_array($value) && count($value) > 0 && is_object($value[0])) {
+        if (is_array($value) && count($value) > 0 &&  is_object($value[0] ?? null)) {
             $value = array_map(function ($item) {
                 return (array)$item;
             }, $value);

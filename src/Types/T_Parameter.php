@@ -20,7 +20,13 @@ class T_Parameter
     }
 
     public function getHelp() : string {
-        return $this->getLongName() . " [value] " . $this->description;
+        $valueHint = $this->isBoolean() ? "" : " [value]";
+        return $this->getLongName() . $valueHint . " " . $this->description;
+    }
+
+    public function isBoolean() : bool {
+        $type = $this->reflectionParameter?->getType();
+        return $type instanceof \ReflectionNamedType && $type->getName() === "bool";
     }
 
     public static function CreateFromReflection(\ReflectionParameter $parameter) : self {

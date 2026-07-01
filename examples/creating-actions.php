@@ -11,6 +11,8 @@ use Phore\Cli\Output\Out;
  *
  * Aufrufe:
  *   php examples/creating-actions.php app create --name demo
+ *   php examples/creating-actions.php app create --name demo --force
+ *   php examples/creating-actions.php app create --name demo --force=false
  *   php examples/creating-actions.php app --workspace /tmp/projects create --name demo --template api
  *   php examples/creating-actions.php app greet --name Matthias
  *   php examples/creating-actions.php app inspect foo bar baz
@@ -27,14 +29,21 @@ class App
         #[CliParameter("name", "Name des Projekts")]
         string $name,
         #[CliParameter("template", "Vorlage, z. B. basic oder api")]
-        string $template = "basic"
+        string $template = "basic",
+        #[CliParameter("force", "Existierendes Projekt überschreiben")]
+        bool $force = false
     ): void {
         Out::TextSuccess("Projekt **{$name}** wird in _{$this->workspace}_ angelegt.");
         Out::Table([
             ["key" => "workspace", "value" => $this->workspace],
             ["key" => "name", "value" => $name],
             ["key" => "template", "value" => $template],
+            ["key" => "force", "value" => $force ? "true" : "false"],
         ]);
+
+        if ($force) {
+            Out::TextWarning("Option **--force** ist aktiv: Ein existierendes Projekt würde überschrieben.");
+        }
     }
 
     public function greet(

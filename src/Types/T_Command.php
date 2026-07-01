@@ -42,7 +42,26 @@ class T_Command
     protected function getNextCommand(array &$argv, array &$arguments) : ?string {
         while ($cur = array_shift($argv)) {
             if (startsWith($cur, "--")) {
-                $arguments[$cur] = array_shift($argv);
+                [$name, $value] = array_pad(explode("=", $cur, 2), 2, null);
+                $param = $this->findParameterByLongName($name);
+
+                if ($param?->isBoolean()) {
+                    if ($value !== null) {
+                        $arguments[$name] = $this->parseBooleanValue($value, $name);
+                        continue;
+                    }
+
+                    $next = $argv[0] ?? null;
+                    if ($next !== null && $this->isBooleanValue($next)) {
+                        $arguments[$name] = $this->parseBooleanValue(array_shift($argv), $name);
+                        continue;
+                    }
+
+                    $arguments[$name] = true;
+                    continue;
+                }
+
+                $arguments[$name] = $value ?? array_shift($argv);
                 continue;
             }
             if (startsWith($cur, "-")) {
@@ -52,6 +71,43 @@ class T_Command
             return $cur;
         }
         return null;
+    }
+
+    private function findParameterByLongName(string $name) : ?T_Parameter
+    {
+        foreach ($this->parameters as $parameter) {
+            if ($parameter->getLongName() === $name) {
+                return $parameter;
+            }
+        }
+        return null;
+    }
+
+    private function isBooleanValue(mixed $value) : bool
+    {
+        if (is_bool($value)) {
+            return true;
+        }
+        if ( ! is_string($value)) {
+            return false;
+        }
+        return in_array(strtolower($value), ["1", "0", "true", "false", "yes", "no", "on", "off"], true);
+    }
+
+    private function parseBooleanValue(mixed $value, string $parameterName) : bool
+    {
+        if (is_bool($value)) {
+            return $value;
+        }
+        if ( ! is_string($value)) {
+            throw new CliException("Invalid boolean value for parameter $parameterName.");
+        }
+
+        return match (strtolower($value)) {
+            "1", "true", "yes", "on" => true,
+            "0", "false", "no", "off" => false,
+            default => throw new CliException("Invalid boolean value for parameter $parameterName: $value")
+        };
     }
 
 
@@ -71,12 +127,10 @@ class T_Command
                 $param = $param[0];
                 assert ($param instanceof T_Parameter);
                 if (isset($arguments[$param->getLongName()])) {
-
-
-                    $ret[]=  $arguments[$param->getLongName()];
+                    $value = $arguments[$param->getLongName()];
+                    $ret[]=  $param->isBoolean() ? $this->parseBooleanValue($value, $param->getLongName()) : $value;
                     continue;
                 }
-                // Handle boolean parameters
 
                 if ($param->isOptional) {
                     $ret[] = $param->reflectionParameter->getDefaultValue();

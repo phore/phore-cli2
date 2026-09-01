@@ -2,6 +2,8 @@
 
 namespace Phore\Cli;
 
+use Phore\Cli\Input\TerminalInputReader;
+
 class CLIntputHandler
 {
     const ANSI_BOLD = "\033[1m";
@@ -22,24 +24,7 @@ class CLIntputHandler
     }
 
     public function askMultiLine(string $question) : string {
-        echo "$question: (end with empty CTRL-X)\n";
-        $input = '';
-
-        while (true) {
-            // Read input character by character
-            $char = fread(STDIN, 1);
-
-            // Handle Ctrl+X to terminate the input process
-            if ($char === "\x18") {  // ASCII code for Ctrl+X
-                echo PHP_EOL . "Input process ended." . PHP_EOL;
-                return $input;
-            }
-
-            // Append the character to the input
-            $input .= $char;
-        }
-
-        return $input;
+        return (new TerminalInputReader())->read($question);
     }
 
 

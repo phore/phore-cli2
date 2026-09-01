@@ -8,7 +8,9 @@ use Phore\Cli\Input\In;
  * Beispiel für die Helper-Klasse Phore\Cli\Input\In.
  *
  * Hinweis:
- * - AskMultiLine beendet die Eingabe mit CTRL-X.
+ * - AskMultiLine nutzt Enter zum Absenden.
+ * - Shift+Enter bzw. Ctrl+J fügt eine neue Zeile ein.
+ * - Eingefügte mehrzeilige Clipboard-Blöcke werden per Bracketed Paste erkannt.
  */
 $name = In::AskLine("Wie heißt du");
 $deploy = In::AskBool("Deployment starten", true);

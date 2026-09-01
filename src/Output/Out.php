@@ -6,14 +6,20 @@ class Out
 {
 
     /**
-     * Return a table representation of the given data
+     * Return a table representation of the given data.
+     *
+     * A column renderer receives the cell value and the complete original row.
+     * Its return value is rendered in the table cell; returning a preformatted string is recommended.
      *
      * @param array $data
      * @param bool $return
+     * @param array|null $columns
+     * @param array<string|int, callable(mixed, array): mixed> $columnRenderers Example:
+     *        ["quantity" => static fn(mixed $value, array $row): string => (string) round((float)$value)]
      * @return string|null
      */
-    public static function Table(array $data, bool $return = false, array $columns = null) : ?string {
-        $of = new CliTableOutputFormat();
+    public static function Table(array $data, bool $return = false, array $columns = null, array $columnRenderers = []) : ?string {
+        $of = new CliTableOutputFormat(["columnRenderers" => $columnRenderers]);
         return $of->print_as_table($data, $return, $columns);
     }
 

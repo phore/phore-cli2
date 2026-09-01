@@ -9,18 +9,39 @@ class CliTableOutputFormat {
     {
         // Default configuration uses spaces as separators.
         // Add a new configuration option for row numbers.
-        $this->config = array_merge(['separator' => '  ', 'rowNumbers' => true], $config);
+        $this->config = array_merge([
+            'separator' => '  ',
+            'rowNumbers' => true,
+            'columnRenderers' => [],
+        ], $config);
+
+        foreach ($this->config['columnRenderers'] as $column => $renderer) {
+            if (!is_callable($renderer)) {
+                throw new \InvalidArgumentException("Column renderer for '$column' must be callable.");
+            }
+        }
     }
 
     public function print_as_table(array $data, bool $return = false, array|null $columns = null): ?string
     {
-        if ($columns !== null) {
-            $data = array_map(function ($row) use ($columns) {
-                return array_filter((array)$row, function ($key) use ($columns) {
-                    return in_array($key, $columns);
-                }, ARRAY_FILTER_USE_KEY);
-            }, $data);
-        }
+        $data = array_map(function ($row) use ($columns) {
+            $originalRow = (array)$row;
+            $renderedRow = $originalRow;
+
+            foreach ($this->config['columnRenderers'] as $column => $renderer) {
+                if (array_key_exists($column, $renderedRow)) {
+                    $renderedRow[$column] = $renderer($renderedRow[$column], $originalRow);
+                }
+            }
+
+            if ($columns === null) {
+                return $renderedRow;
+            }
+
+            return array_filter($renderedRow, function ($key) use ($columns) {
+                return in_array($key, $columns, true);
+            }, ARRAY_FILTER_USE_KEY);
+        }, $data);
 
         // Get the maximum width of the command line.
         $terminalWidth = exec('tput cols') ?: 80;

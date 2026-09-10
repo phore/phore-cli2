@@ -34,7 +34,7 @@ class TerminalInputReader
                 }
 
                 if ($char === "\x04") { // Ctrl+D
-                    fwrite(STDERR, PHP_EOL);
+                    fwrite(STDERR, PHP_EOL . 'Eingabe abgeschlossen.' . PHP_EOL);
                     return $input;
                 }
 
@@ -46,6 +46,11 @@ class TerminalInputReader
                         $input .= $paste;
                         $this->echoInput($paste);
                         continue;
+                    }
+
+                    if ($this->isSubmitSequence($sequence)) { // Enter with CSI u keyboard protocol
+                        fwrite(STDERR, PHP_EOL . 'Eingabe abgeschlossen.' . PHP_EOL);
+                        return $input;
                     }
 
                     if ($sequence === "\x1b[13;2u" || $sequence === "\x1b[13;5u") { // Shift+Enter / Ctrl+Enter
@@ -64,7 +69,7 @@ class TerminalInputReader
                 }
 
                 if ($char === "\x0d") { // Enter
-                    fwrite(STDERR, PHP_EOL);
+                    fwrite(STDERR, PHP_EOL . 'Eingabe abgeschlossen.' . PHP_EOL);
                     return $input;
                 }
 
@@ -85,6 +90,12 @@ class TerminalInputReader
                 $this->restoreStty($oldStty);
             }
         }
+    }
+
+
+    protected function isSubmitSequence(string $sequence): bool
+    {
+        return preg_match('/^\\x1b\\[13(?:;1(?::\\d+)?)?u$/', $sequence) === 1;
     }
 
 

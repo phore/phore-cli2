@@ -2,78 +2,51 @@
 
 namespace Phore\Cli;
 
-use Http\Client\Exception;
-use Phore\Cli\Exception\CliException;
 use Phore\Cli\Format\ExceptionVisualizer;
-use Phore\Cli\Types\T_CommandGroup;
 use Phore\Cli\Types\T_CommandSet;
 
+/**
+ * Backward compatible static access to the default CLI application.
+ */
 class CliDispatcher
 {
+    private static ?CliApplication $default = null;
 
-
-    private static T_CommandSet $commandSet;
-
-
-    public static function getCommandSet() : T_CommandSet {
-        if ( ! isset (self::$commandSet))
-            self::$commandSet = new T_CommandSet();
-        return self::$commandSet;
-    }
-
-    public static function autoload() {
-
-    }
-
-    public static function addClass(string $className)
+    private static function getDefault(): CliApplication
     {
-        self::getCommandSet()->addCommand(T_CommandGroup::CreateFromClassName($className));
+        return self::$default ??= new CliApplication();
     }
 
+    public static function getCommandSet(): T_CommandSet
+    {
+        return self::getDefault()->getCommandSet();
+    }
+
+    public static function autoload(): void
+    {
+    }
+
+    public static function addClass(string $className): void
+    {
+        self::getDefault()->addClass($className);
+    }
 
     /**
-     * Run a command
-     * 
-     * If used manually: pass each argument as array element
-     * 
-     * @param array $argv
-     * @param int|null $argc
+     * Runs the default application and prints its output or a formatted error.
+     *
+     * Example: CliDispatcher::run($argv);
+     *
+     * @param array<int, string> $argv
+     * @param int|null $argc Retained for compatibility.
      * @return void
+     * @see CliApplication::run()
      */
-    public static function run(array $argv, int $argc = null)
+    public static function run(array $argv, int $argc = null): void
     {
-        if ($argc === null)
-            $argc = count($argv);
-        $exceptionVisualizer = new ExceptionVisualizer();
-
         try {
-            $name = array_shift($argv);
-            self::getCommandSet()->setName($name);
-
-            $presetContainer = new CliPreset();
-            self::getCommandSet()->addCliPreset($presetContainer);
-
-            if (file_exists(getcwd() . "/cli_presets.ini")) {
-                $presetContainer->loadPresets(getcwd() . "/cli_presets.ini");
-            }
-
-            // Check for preset
-            $arguments = [];
-            if (str_starts_with($argv[0] ?? "", ":")) {
-                $presetName = array_shift($argv);
-                $newArgv = $presetContainer->getPreset($presetName, $arguments);
-                if ($newArgv !== null) {
-                    array_unshift($argv, ...$newArgv);
-                }
-            }
-
-
-            self::getCommandSet()->dispatch($argv, $arguments);
-            echo "\n";
-
-        } catch (\Exception|\Error $e) {
-            $exceptionVisualizer->visualize($e);
+            echo self::getDefault()->run($argv);
+        } catch (\Exception|\Error $exception) {
+            (new ExceptionVisualizer())->visualize($exception);
         }
-
     }
 }

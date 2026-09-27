@@ -40,8 +40,8 @@ class T_Command
     }
 
     protected function getNextCommand(array &$argv, array &$arguments) : ?string {
-        while ($cur = array_shift($argv)) {
-            if (startsWith($cur, "--")) {
+        while (($cur = array_shift($argv)) !== null) {
+            if (str_starts_with($cur, "--")) {
                 [$name, $value] = array_pad(explode("=", $cur, 2), 2, null);
                 $param = $this->findParameterByLongName($name);
 
@@ -64,7 +64,7 @@ class T_Command
                 $arguments[$name] = $value ?? array_shift($argv);
                 continue;
             }
-            if (startsWith($cur, "-")) {
+            if (str_starts_with($cur, "-")) {
                 $arguments[$cur] = true;
                 continue;
             }
@@ -121,7 +121,7 @@ class T_Command
                 $ret[] = $arguments["argv"];
                 continue;
             }
-            $param = array_values(array_filter($this->parameters, fn(T_Parameter $p) => $p->name === $parameter->name));
+            $param = array_values(array_filter($this->parameters, fn(T_Parameter $p) => $p->reflectionParameter?->getName() === $parameter->name));
 
             if (count ($param) === 1)  {
                 $param = $param[0];

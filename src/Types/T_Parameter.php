@@ -37,7 +37,7 @@ class T_Parameter
 
         /* @var $param CliParameter */
         $param = $pAttr[0]->newInstance();
-        return new self($param->name, $param->desc, $parameter->isOptional(), $parameter);
+        return new self($param->name ?? $parameter->getName(), $param->desc, $parameter->isOptional(), $parameter);
     }
 
 }

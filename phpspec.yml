@@ -1,0 +1,4 @@
+suites:
+  cli:
+    namespace: Phore\Cli
+    psr4_prefix: Phore\Cli

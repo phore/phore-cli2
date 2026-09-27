@@ -34,7 +34,8 @@ php app.php app greet --name Matthias
 
 ## Examples
 
-- `examples/creating-actions.php` – Actions mit `CliDispatcher` und `CliParameter`
+- `examples/creating-actions.php` – Actions mit der statischen `CliDispatcher`-API
+- `examples/shared-scopes.php` – gemeinsamer Scope, CLI-Optionsname und eigene `CliApplication`
 - `examples/helper-in.php` – Eingaben mit `Phore\Cli\Input\In`
 - `examples/helper-out.php` – formatierte Ausgabe mit `Phore\Cli\Output\Out`
 - `examples/helper-nc.php` – einfache TUI-Helfer mit `Phore\Cli\Ncurses\Nc`
@@ -51,3 +52,53 @@ php app.php app greet --name Matthias
 
 Weitere Übersicht: `.ai-usage-info.md`
 
+
+## Eigene Instanz und gemeinsam genutzte Scopes
+
+`CliApplication` verwaltet eine eigene Command-Registry. `run()` nimmt wie
+`CliDispatcher::run()` ein `argv` einschließlich Programmname entgegen und
+liefert die Konsolenausgabe als String. Fehler werden als Exceptions an den
+Aufrufer weitergegeben. Die bisherigen statischen `CliDispatcher`-Aufrufe
+funktionieren weiterhin und schreiben die Ausgabe direkt auf die Konsole.
+
+```php
+use Phore\Cli\Annotation\CliParameter;
+use Phore\Cli\Annotation\CliScope;
+use Phore\Cli\CliApplication;
+
+#[CliScope('project')]
+class ProjectCreate
+{
+    public function create(
+        #[CliParameter('template-dir')] string $templateDir
+    ): void {
+        echo "Template: {$templateDir}";
+    }
+}
+
+#[CliScope('project')]
+class ProjectStatus
+{
+    public function status(): void
+    {
+        echo 'Ready';
+    }
+}
+
+$app = new CliApplication();
+$app->addClass(ProjectCreate::class);
+$app->addClass(ProjectStatus::class);
+echo $app->run(['tool', 'project', 'create', '--template-dir=/tmp/basic']);
+```
+
+Ergebnis: `Template: /tmp/basic`. Ohne `CliScope` bleibt der kleingeschriebene
+Klassenname der Gruppenname. Jede Action verwendet den Konstruktor ihrer
+eigenen Klasse. Doppelte Action-Namen im selben Scope und widersprüchliche
+Typen gleichnamiger Scope-Optionen führen bei der Registrierung zu einem
+Fehler. `CliParameter` benennt nur die CLI-Option um; die Bindung an den
+PHP-Parameter erfolgt weiterhin über dessen PHP-Namen.
+
+## Tests
+
+Nach `composer install` führt `composer test` die PHPSpec-Specs aus
+(`vendor/bin/phpspec run`).

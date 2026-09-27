@@ -18,9 +18,12 @@
   },
   "minimum-stability": "dev",
   "require-dev": {
-    "phore/tester": "*"
+    "phpspec/phpspec": "^7.5 || ^8.0"
   },
   "config": {
     "preferred-install": "source"
+  },
+  "scripts": {
+    "test": "phpspec run"
   }
 }

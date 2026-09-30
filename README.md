@@ -57,9 +57,10 @@ Weitere Übersicht: `.ai-usage-info.md`
 
 `CliApplication` verwaltet eine eigene Command-Registry. `run()` nimmt wie
 `CliDispatcher::run()` ein `argv` einschließlich Programmname entgegen und
-liefert die Konsolenausgabe als String. Fehler werden als Exceptions an den
-Aufrufer weitergegeben. Die bisherigen statischen `CliDispatcher`-Aufrufe
-funktionieren weiterhin und schreiben die Ausgabe direkt auf die Konsole.
+schreibt die Ausgabe direkt auf die Konsole. Dabei wird kein PHP-Output-Buffer
+aktiviert oder verändert. Fehler werden als Exceptions an den Aufrufer
+weitergegeben. Die bisherigen statischen `CliDispatcher`-Aufrufe funktionieren
+weiterhin ebenfalls mit direkter Konsolenausgabe.
 
 ```php
 use Phore\Cli\Annotation\CliParameter;
@@ -88,7 +89,7 @@ class ProjectStatus
 $app = new CliApplication();
 $app->addClass(ProjectCreate::class);
 $app->addClass(ProjectStatus::class);
-echo $app->run(['tool', 'project', 'create', '--template-dir=/tmp/basic']);
+$app->run(['tool', 'project', 'create', '--template-dir=/tmp/basic']);
 ```
 
 Ergebnis: `Template: /tmp/basic`. Ohne `CliScope` bleibt der kleingeschriebene

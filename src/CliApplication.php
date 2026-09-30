@@ -49,19 +49,20 @@ class CliApplication
     }
 
     /**
-     * Executes argv and returns buffered echo output from the command or help.
+     * Executes argv and writes command or help output directly to the current output stream.
      *
      * The first element is the executable name. Exceptions propagate to the
-     * caller; no output is returned on failure. Action side effects still occur.
+     * caller. The method deliberately does not start or manipulate PHP output
+     * buffering, so embedding applications retain full control over output.
      *
-     * Example: echo $app->run(['tool', 'project', 'create', '--name', 'demo']);
+     * Example: $app->run(['tool', 'project', 'create', '--name', 'demo']);
      *
      * @param array<int, string> $argv
-     * @return string Captured echo output followed by a newline.
+     * @return void
      * @throws \Throwable
      * @see CliDispatcher::run()
      */
-    public function run(array $argv): string
+    public function run(array $argv): void
     {
         $name = array_shift($argv);
         $this->commandSet->setName($name ?? '');
@@ -82,14 +83,7 @@ class CliApplication
             }
         }
 
-        ob_start();
-        try {
-            $this->commandSet->dispatch($argv, $arguments);
-            echo "\n";
-            return (string) ob_get_clean();
-        } catch (\Throwable $exception) {
-            ob_end_clean();
-            throw $exception;
-        }
+        $this->commandSet->dispatch($argv, $arguments);
+        echo "\n";
     }
 }

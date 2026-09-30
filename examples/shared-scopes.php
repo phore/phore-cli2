@@ -35,5 +35,5 @@ $app = new CliApplication();
 $app->addClass(ProjectCreateActions::class);
 $app->addClass(ProjectStatusActions::class);
 
-// run() liefert die Ausgabe zurück; Exceptions gehen an den Aufrufer.
-echo $app->run($argv);
+// run() schreibt direkt auf die Konsole; Exceptions gehen an den Aufrufer.
+$app->run($argv);

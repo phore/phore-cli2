@@ -11,6 +11,8 @@ use PhpSpec\ObjectBehavior;
 #[CliScope('project')]
 class CreateAction
 {
+    public static ?int $bufferLevel = null;
+
     public function __construct(#[CliParameter] private string $workspace = './build')
     {
     }
@@ -23,6 +25,11 @@ class CreateAction
     public function inspect(array $argv): void
     {
         echo implode(',', $argv);
+    }
+
+    public function buffer(): void
+    {
+        self::$bufferLevel = ob_get_level();
     }
 }
 
@@ -50,9 +57,16 @@ class CliApplicationSpec extends ObjectBehavior
         $this->addClass(CreateAction::class);
         $this->addClass(StatusAction::class);
 
-        $this->run(['tool', 'project', '--workspace', '/tmp', 'create', '--template-dir=basic'])
-            ->shouldReturn("/tmp:basic\n");
-        $this->run(['tool', 'project', 'status'])->shouldReturn("ready\n");
+        $bufferLevel = ob_get_level();
+        CreateAction::$bufferLevel = null;
+
+        $this->run(['tool', 'project', '--workspace', '/tmp', 'create', '--template-dir=basic']);
+        $this->run(['tool', 'project', 'buffer']);
+        $this->run(['tool', 'project', 'status']);
+
+        if (CreateAction::$bufferLevel !== $bufferLevel || ob_get_level() !== $bufferLevel) {
+            throw new \RuntimeException('CliApplication::run() must not change PHP output buffering.');
+        }
     }
 
     public function it_keeps_registrations_in_separate_instances(): void
@@ -61,8 +75,8 @@ class CliApplicationSpec extends ObjectBehavior
         $other->addClass(StatusAction::class);
         $this->addClass(CreateAction::class);
 
-        $this->run(['tool', 'project', 'inspect', '0'])->shouldReturn("0\n");
-        $other->run(['tool', 'project', 'status'])->shouldReturn("ready\n");
+        $this->run(['tool', 'project', 'inspect', '0']);
+        $other->run(['tool', 'project', 'status']);
         $this->shouldThrow(CliException::class)
             ->during('run', [['tool', 'project', 'status']]);
     }

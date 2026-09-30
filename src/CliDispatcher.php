@@ -44,7 +44,7 @@ class CliDispatcher
     public static function run(array $argv, int $argc = null): void
     {
         try {
-            echo self::getDefault()->run($argv);
+            self::getDefault()->run($argv);
         } catch (\Exception|\Error $exception) {
             (new ExceptionVisualizer())->visualize($exception);
         }

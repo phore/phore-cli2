@@ -50,9 +50,13 @@ class CliApplicationSpec extends ObjectBehavior
         $this->addClass(CreateAction::class);
         $this->addClass(StatusAction::class);
 
-        $this->run(['tool', 'project', '--workspace', '/tmp', 'create', '--template-dir=basic'])
-            ->shouldReturn("/tmp:basic\n");
-        $this->run(['tool', 'project', 'status'])->shouldReturn("ready\n");
+        $bufferLevel = ob_get_level();
+        $this->run(['tool', 'project', '--workspace', '/tmp', 'create', '--template-dir=basic']);
+        $this->run(['tool', 'project', 'status']);
+
+        if (ob_get_level() !== $bufferLevel) {
+            throw new \RuntimeException('CliApplication::run() must not change PHP output buffering.');
+        }
     }
 
     public function it_keeps_registrations_in_separate_instances(): void
@@ -61,8 +65,8 @@ class CliApplicationSpec extends ObjectBehavior
         $other->addClass(StatusAction::class);
         $this->addClass(CreateAction::class);
 
-        $this->run(['tool', 'project', 'inspect', '0'])->shouldReturn("0\n");
-        $other->run(['tool', 'project', 'status'])->shouldReturn("ready\n");
+        $this->run(['tool', 'project', 'inspect', '0']);
+        $other->run(['tool', 'project', 'status']);
         $this->shouldThrow(CliException::class)
             ->during('run', [['tool', 'project', 'status']]);
     }

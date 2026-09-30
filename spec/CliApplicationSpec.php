@@ -11,6 +11,8 @@ use PhpSpec\ObjectBehavior;
 #[CliScope('project')]
 class CreateAction
 {
+    public static ?int $bufferLevel = null;
+
     public function __construct(#[CliParameter] private string $workspace = './build')
     {
     }
@@ -23,6 +25,11 @@ class CreateAction
     public function inspect(array $argv): void
     {
         echo implode(',', $argv);
+    }
+
+    public function buffer(): void
+    {
+        self::$bufferLevel = ob_get_level();
     }
 }
 
@@ -51,10 +58,13 @@ class CliApplicationSpec extends ObjectBehavior
         $this->addClass(StatusAction::class);
 
         $bufferLevel = ob_get_level();
+        CreateAction::$bufferLevel = null;
+
         $this->run(['tool', 'project', '--workspace', '/tmp', 'create', '--template-dir=basic']);
+        $this->run(['tool', 'project', 'buffer']);
         $this->run(['tool', 'project', 'status']);
 
-        if (ob_get_level() !== $bufferLevel) {
+        if (CreateAction::$bufferLevel !== $bufferLevel || ob_get_level() !== $bufferLevel) {
             throw new \RuntimeException('CliApplication::run() must not change PHP output buffering.');
         }
     }

@@ -81,6 +81,39 @@ class CliApplicationSpec extends ObjectBehavior
             ->during('run', [['tool', 'project', 'status']]);
     }
 
+
+    public function it_shows_only_required_parameters_in_compact_help(): void
+    {
+        $this->addClass(CreateAction::class);
+
+        ob_start();
+        $this->run(['tool', 'project']);
+        $help = ob_get_clean();
+
+        if ( ! str_contains($help, '--template-dir <value>')) {
+            throw new \RuntimeException('Compact help must show required parameters.');
+        }
+        if (str_contains($help, '--workspace')) {
+            throw new \RuntimeException('Compact help must hide optional parameters.');
+        }
+    }
+
+    public function it_shows_all_parameters_with_help_flag(): void
+    {
+        $this->addClass(CreateAction::class);
+
+        ob_start();
+        $this->run(['tool', 'project', 'create', '--help']);
+        $help = ob_get_clean();
+
+        if ( ! str_contains($help, '--template-dir <value>')) {
+            throw new \RuntimeException('Detailed help must show required parameters.');
+        }
+        if ( ! str_contains($help, '[--workspace <value>]')) {
+            throw new \RuntimeException('Detailed help must mark optional parameters.');
+        }
+    }
+
     public function it_rejects_duplicate_actions_in_one_scope(): void
     {
         $this->addClass(StatusAction::class);

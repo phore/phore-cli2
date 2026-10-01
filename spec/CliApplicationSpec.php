@@ -18,7 +18,7 @@ class CreateAction
     {
     }
 
-    #[CliCommand('create', 'Creates a project')]
+    #[CliCommand('create', 'Creates a project', 'Creates a new project from the selected template.')]
     public function create(#[CliParameter('template-dir')] string $templateDir): void
     {
         echo $this->workspace . ':' . $templateDir;
@@ -116,6 +116,19 @@ class CliApplicationSpec extends ObjectBehavior
         }
     }
 
+    public function it_shows_aligned_compact_command_descriptions(): void
+    {
+        $this->addClass(CreateAction::class);
+
+        ob_start();
+        $this->run(['tool', 'project']);
+        $help = ob_get_clean();
+
+        if ( ! preg_match('/^  create\\s{2,}Creates a project$/m', $help)) {
+            throw new \\RuntimeException('Compact help must align command descriptions.');
+        }
+    }
+
     public function it_shows_all_parameters_with_help_flag(): void
     {
         $this->addClass(CreateAction::class);
@@ -126,6 +139,9 @@ class CliApplicationSpec extends ObjectBehavior
 
         if ( ! str_contains($help, '--template-dir <value>')) {
             throw new \RuntimeException('Detailed help must show required parameters.');
+        }
+        if ( ! str_contains($help, 'Creates a new project from the selected template.')) {
+            throw new \\RuntimeException('Detailed help must show the long command description.');
         }
         if ( ! str_contains($help, '[--workspace <value>]')) {
             throw new \RuntimeException('Detailed help must mark optional parameters.');

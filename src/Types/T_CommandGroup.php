@@ -65,23 +65,30 @@ class T_CommandGroup extends T_Command
         }
     }
 
-    public function getHelp(): string
+    public function getHelp(bool $detailed = true): string
     {
         $stub = "\n" . $this->name . "\t" . $this->desc;
         foreach ($this->parameters as $parameter) {
-            $stub .= "\n\t" . $parameter->getHelp();
+            if ($detailed || ! $parameter->isOptional) {
+                $stub .= "\n\t" . $parameter->getHelp();
+            }
         }
         foreach ($this->commands as $command) {
-            $stub .= $command->getHelp();
+            $stub .= $command->getHelp($detailed);
         }
         return $stub;
     }
 
     public function dispatch(array $argv, array &$arguments, $object = null): void
     {
+        if (($argv[0] ?? null) === "-h" || ($argv[0] ?? null) === "--help") {
+            echo $this->getHelp(true);
+            return;
+        }
+
         $command = $this->getNextCommand($argv, $arguments);
         if ($command === null) {
-            echo $this->getHelp();
+            echo $this->getHelp(false);
             return;
         }
         $owner = $this->commandOwners[$command] ?? null;

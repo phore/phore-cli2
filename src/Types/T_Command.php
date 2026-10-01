@@ -2,6 +2,7 @@
 
 namespace Phore\Cli\Types;
 
+use Phore\Cli\Annotation\CliCommand;
 use Phore\Cli\Annotation\CliParameter;
 use Phore\Cli\Exception\CliException;
 
@@ -32,7 +33,12 @@ class T_Command
         $argv = "";
         if ($this->hasArgvParameters)
             $argv = "\t[argv] ";
-        $sig =  "\n\t" . $this->name . $argv . "\t" . $this->desc . "";
+        $hasOptionalParameters = (bool) array_filter(
+            $this->parameters,
+            fn(T_Parameter $parameter): bool => $parameter->isOptional
+        );
+        $options = ! $detailed && $hasOptionalParameters ? "\t[OPTIONS]" : "";
+        $sig =  "\n\t" . $this->name . $argv . $options . "\t" . $this->desc . "";
         foreach ($this->parameters as $parameter) {
             if ($detailed || ! $parameter->isOptional) {
                 $sig .= "\n\t\t" . $parameter->getHelp();
@@ -169,7 +175,15 @@ class T_Command
 
 
     public static function CreateFromReflection(\ReflectionMethod|\ReflectionFunction $method) : self {
-        $cmd = new self($method->getName(), "", $method);
+        $attributes = $method->getAttributes(CliCommand::class);
+        $name = $method->getName();
+        $description = "";
+        if ($attributes !== []) {
+            $command = $attributes[0]->newInstance();
+            $name = is_array($command->name) ? ($command->name[0] ?? $name) : $command->name;
+            $description = $command->desc;
+        }
+        $cmd = new self($name, $description, $method);
         foreach ($method->getParameters() as $parameter) {
             if ($parameter->name === "argv") {
                 $cmd->hasArgvParameters = true;

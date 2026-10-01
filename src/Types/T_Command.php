@@ -29,7 +29,7 @@ class T_Command
 
 
 
-    public function getHelp(bool $detailed = true) : string {
+    public function getHelp(bool $detailed = true, int $nameWidth = 0) : string {
         $argv = "";
         if ($this->hasArgvParameters)
             $argv = "\t[argv] ";
@@ -37,11 +37,15 @@ class T_Command
             $this->parameters,
             fn(T_Parameter $parameter): bool => $parameter->isOptional
         );
-        $options = ! $detailed && $hasOptionalParameters ? "\t[OPTIONS]" : "";
-        $sig =  "\n\t" . $this->name . $argv . $options . "\t" . $this->desc . "";
+        $options = ! $detailed && $hasOptionalParameters ? " [OPTIONS]" : "";
+        $command = $this->name . $argv . $options;
+        $sig = "\n  " . str_pad($command, max($nameWidth, strlen($command)) + 2) . $this->desc;
+        if ($detailed && $this->longDesc !== "") {
+            $sig .= "\n\n  " . $this->longDesc;
+        }
         foreach ($this->parameters as $parameter) {
             if ($detailed || ! $parameter->isOptional) {
-                $sig .= "\n\t\t" . $parameter->getHelp();
+                $sig .= "\n    " . $parameter->getHelp();
             }
         }
         return $sig;
@@ -178,12 +182,14 @@ class T_Command
         $attributes = $method->getAttributes(CliCommand::class);
         $name = $method->getName();
         $description = "";
+        $longDescription = "";
         if ($attributes !== []) {
             $command = $attributes[0]->newInstance();
             $name = is_array($command->name) ? ($command->name[0] ?? $name) : $command->name;
             $description = $command->desc;
+            $longDescription = $command->longDesc;
         }
-        $cmd = new self($name, $description, $method);
+        $cmd = new self($name, $description, $longDescription, $method);
         foreach ($method->getParameters() as $parameter) {
             if ($parameter->name === "argv") {
                 $cmd->hasArgvParameters = true;

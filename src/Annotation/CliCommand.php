@@ -8,6 +8,7 @@ class CliCommand
 {
     public function __construct(
         public string|array $name,
-        public string $desc = "<no description>"
+        public string $desc = "<no description>",
+        public string $longDesc = ""
     ){}
 }

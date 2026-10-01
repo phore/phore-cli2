@@ -73,8 +73,12 @@ class T_CommandGroup extends T_Command
                 $stub .= "\n\t" . $parameter->getHelp();
             }
         }
+        $nameWidth = 0;
         foreach ($this->commands as $command) {
-            $stub .= $command->getHelp($detailed);
+            $nameWidth = max($nameWidth, strlen($command->name . ($command->hasArgvParameters ? " [argv]" : "")));
+        }
+        foreach ($this->commands as $command) {
+            $stub .= $command->getHelp($detailed, $nameWidth);
         }
         return $stub;
     }

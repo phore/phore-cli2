@@ -49,8 +49,12 @@ class T_CommandSet extends T_CommandGroup
     public function getHelp(bool $detailed = true): string
     {
         $sig = "\n" . $this->name . " [group_name] [--parameters] [command]\n\n" . $this->desc . "\n";
+        $nameWidth = 0;
         foreach ($this->commands as $command) {
-            $sig .= $command->getHelp($detailed);
+            $nameWidth = max($nameWidth, strlen($command->name));
+        }
+        foreach ($this->commands as $command) {
+            $sig .= $command->getHelp($detailed, $nameWidth);
         }
         foreach ($this->cliPresets as $preset) {
             $sig .= $preset->getHelp();

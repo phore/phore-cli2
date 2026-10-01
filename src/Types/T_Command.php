@@ -19,6 +19,7 @@ class T_Command
     public function __construct(
         public string $name,
         public string $desc = "<no description>",
+        public string $longDesc = "",
         public \ReflectionMethod|\ReflectionFunction|null $reflectionFunction = null
     ){}
 

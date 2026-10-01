@@ -148,6 +148,21 @@ class CliApplicationSpec extends ObjectBehavior
         }
     }
 
+    public function it_keeps_command_group_help_signature_compatible(): void
+    {
+        $parent = new \\ReflectionMethod(\\Phore\\Cli\\Types\\T_Command::class, 'getHelp');
+        $group = new \\ReflectionMethod(\\Phore\\Cli\\Types\\T_CommandGroup::class, 'getHelp');
+
+        $set = new \\ReflectionMethod(\\Phore\\Cli\\Types\\T_CommandSet::class, 'getHelp');
+
+        if ($group->getNumberOfParameters() < $parent->getNumberOfParameters()) {
+            throw new \\RuntimeException('T_CommandGroup::getHelp() must remain compatible with T_Command::getHelp().');
+        }
+        if ($set->getNumberOfParameters() < $group->getNumberOfParameters()) {
+            throw new \\RuntimeException('T_CommandSet::getHelp() must remain compatible with T_CommandGroup::getHelp().');
+        }
+    }
+
     public function it_rejects_duplicate_actions_in_one_scope(): void
     {
         $this->addClass(StatusAction::class);

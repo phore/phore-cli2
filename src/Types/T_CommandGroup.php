@@ -65,7 +65,7 @@ class T_CommandGroup extends T_Command
         }
     }
 
-    public function getHelp(bool $detailed = true): string
+    public function getHelp(bool $detailed = true, int $nameWidth = 0): string
     {
         $stub = "\n" . $this->name . "\t" . $this->desc;
         foreach ($this->parameters as $parameter) {

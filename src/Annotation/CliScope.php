@@ -9,18 +9,47 @@ namespace Phore\Cli\Annotation;
 class CliScope
 {
     /**
-     * Sets a shared CLI group name for the annotated class.
+     * Sets a CLI scope or nested scope path for the annotated class.
      *
-     * Example: #[CliScope('project')] on two action classes.
+     * Example: #[CliScope('ai')] creates the "ai" scope.
+     * Example: #[CliScope(['ai', 'edit'])] creates the nested "ai edit" scope.
      *
-     * @param string $name Nonempty CLI group name.
-     * @throws \\InvalidArgumentException For an empty name.
-     * @see \\Phore\\Cli\\Types\\T_CommandGroup::CreateFromClassName()
+     * @param string|array<int, string> $name Nonempty CLI scope or scope path.
+     * @throws \InvalidArgumentException For an empty or invalid scope path.
+     * @see \Phore\Cli\Types\T_CommandGroup::CreateFromClassName()
      */
-    public function __construct(public string $name)
+    public function __construct(public string|array $name)
     {
-        if ($name === '') {
-            throw new \InvalidArgumentException('CLI scope name must not be empty.');
+        $path = $this->getPath();
+        if ($path === []) {
+            throw new \InvalidArgumentException('CLI scope path must not be empty.');
         }
+
+        foreach ($path as $segment) {
+            if ($segment === '') {
+                throw new \InvalidArgumentException('CLI scope names must not be empty.');
+            }
+        }
+    }
+
+    /**
+     * Returns the normalized scope path.
+     *
+     * Example: (new CliScope(['ai', 'edit']))->getPath() returns ['ai', 'edit'].
+     *
+     * @return array<int, string>
+     * @see self::__construct()
+     */
+    public function getPath(): array
+    {
+        $path = is_array($this->name) ? array_values($this->name) : [$this->name];
+
+        foreach ($path as $segment) {
+            if (! is_string($segment)) {
+                throw new \InvalidArgumentException('CLI scope names must be strings.');
+            }
+        }
+
+        return $path;
     }
 }

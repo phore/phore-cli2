@@ -8,7 +8,6 @@ use Phore\Cli\Exception\CliException;
 
 class T_Command
 {
-
     /**
      * @var T_Parameter[]
      */
@@ -18,41 +17,59 @@ class T_Command
 
     public function __construct(
         public string $name,
-        public string $desc = "<no description>",
+        public string $desc = "",
         public string $longDesc = "",
         public \ReflectionMethod|\ReflectionFunction|null $reflectionFunction = null
-    ){}
+    ) {
+    }
 
-    public function addParameter(T_Parameter $parameter) : void
+    public function addParameter(T_Parameter $parameter): void
     {
         $this->parameters[] = $parameter;
     }
 
-
-
-    public function getHelp(bool $detailed = true, int $nameWidth = 0) : string {
+    public function getHelp(bool $detailed = true, int $nameWidth = 0, bool $includeHint = true): string
+    {
         $argv = "";
-        if ($this->hasArgvParameters)
+        if ($this->hasArgvParameters) {
             $argv = "\t[argv] ";
+        }
+
         $hasOptionalParameters = (bool) array_filter(
             $this->parameters,
             fn(T_Parameter $parameter): bool => $parameter->isOptional
         );
         $options = ! $detailed && $hasOptionalParameters ? " [OPTIONS]" : "";
         $command = $this->name . $argv . $options;
-        $sig = "\n  " . str_pad($command, max($nameWidth, strlen($command)) + 2) . $this->desc;
+        $sig = "\n  " . str_pad($command, max($nameWidth, strlen($command)) + 2);
+
+        if ($this->desc !== "") {
+            $sig .= $this->desc;
+        }
         if ($detailed && $this->longDesc !== "") {
             $sig .= "\n\n  " . $this->longDesc;
         }
+
         foreach ($this->parameters as $parameter) {
             if ($detailed || ! $parameter->isOptional) {
                 $sig .= "\n    " . $parameter->getHelp();
             }
         }
+
+        if ($includeHint) {
+            $sig .= $this->getHelpHint();
+        }
+
         return $sig;
     }
 
-    protected function getNextCommand(array &$argv, array &$arguments) : ?string {
+    protected function getHelpHint(): string
+    {
+        return "\n\n  Use -h to show help and additional options.";
+    }
+
+    protected function getNextCommand(array &$argv, array &$arguments): ?string
+    {
         while (($cur = array_shift($argv)) !== null) {
             if (str_starts_with($cur, "--")) {
                 [$name, $value] = array_pad(explode("=", $cur, 2), 2, null);
@@ -86,7 +103,7 @@ class T_Command
         return null;
     }
 
-    private function findParameterByLongName(string $name) : ?T_Parameter
+    private function findParameterByLongName(string $name): ?T_Parameter
     {
         foreach ($this->parameters as $parameter) {
             if ($parameter->getLongName() === $name) {
@@ -96,23 +113,23 @@ class T_Command
         return null;
     }
 
-    private function isBooleanValue(mixed $value) : bool
+    private function isBooleanValue(mixed $value): bool
     {
         if (is_bool($value)) {
             return true;
         }
-        if ( ! is_string($value)) {
+        if (! is_string($value)) {
             return false;
         }
         return in_array(strtolower($value), ["1", "0", "true", "false", "yes", "no", "on", "off"], true);
     }
 
-    private function parseBooleanValue(mixed $value, string $parameterName) : bool
+    private function parseBooleanValue(mixed $value, string $parameterName): bool
     {
         if (is_bool($value)) {
             return $value;
         }
-        if ( ! is_string($value)) {
+        if (! is_string($value)) {
             throw new CliException("Invalid boolean value for parameter $parameterName.");
         }
 
@@ -123,25 +140,31 @@ class T_Command
         };
     }
 
-
-    protected function buildParametersFor(\ReflectionFunction|\ReflectionMethod|null $fn, array $arguments) {
-        if ($fn === null)
+    protected function buildParametersFor(\ReflectionFunction|\ReflectionMethod|null $fn, array $arguments)
+    {
+        if ($fn === null) {
             return [];
+        }
         $ret = [];
 
-        foreach($fn->getParameters() as $parameter) {
+        foreach ($fn->getParameters() as $parameter) {
             if ($parameter->name === "argv") {
                 $ret[] = $arguments["argv"];
                 continue;
             }
-            $param = array_values(array_filter($this->parameters, fn(T_Parameter $p) => $p->reflectionParameter?->getName() === $parameter->name));
+            $param = array_values(array_filter(
+                $this->parameters,
+                fn(T_Parameter $p) => $p->reflectionParameter?->getName() === $parameter->name
+            ));
 
-            if (count ($param) === 1)  {
+            if (count($param) === 1) {
                 $param = $param[0];
-                assert ($param instanceof T_Parameter);
+                assert($param instanceof T_Parameter);
                 if (isset($arguments[$param->getLongName()])) {
                     $value = $arguments[$param->getLongName()];
-                    $ret[]=  $param->isBoolean() ? $this->parseBooleanValue($value, $param->getLongName()) : $value;
+                    $ret[] = $param->isBoolean()
+                        ? $this->parseBooleanValue($value, $param->getLongName())
+                        : $value;
                     continue;
                 }
 
@@ -152,22 +175,22 @@ class T_Command
             }
 
             throw new CliException("Missing required parameter: " . $parameter->getName());
-
         }
         return $ret;
     }
 
-    public function dispatch(array $argv, array &$arguments, $object = null) : void {
+    public function dispatch(array $argv, array &$arguments, $object = null): void
+    {
         if (in_array("-h", $argv, true) || in_array("--help", $argv, true)) {
             echo $this->getHelp(true);
             return;
         }
 
         $curCmd = $this->getNextCommand($argv, $arguments);
-        if ($curCmd !== null)
+        if ($curCmd !== null) {
             array_unshift($argv, $curCmd);
+        }
 
-        // Make argv available
         $arguments["argv"] = $argv;
 
         if ($object !== null) {
@@ -178,8 +201,8 @@ class T_Command
         $this->reflectionFunction->invoke(...$this->buildParametersFor($this->reflectionFunction, $arguments));
     }
 
-
-    public static function CreateFromReflection(\ReflectionMethod|\ReflectionFunction $method) : self {
+    public static function CreateFromReflection(\ReflectionMethod|\ReflectionFunction $method): self
+    {
         $attributes = $method->getAttributes(CliCommand::class);
         $name = $method->getName();
         $description = "";
@@ -200,5 +223,4 @@ class T_Command
         }
         return $cmd;
     }
-
 }

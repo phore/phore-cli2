@@ -46,11 +46,11 @@ class T_CommandSet extends T_CommandGroup
         $this->cliPresets[] = $preset;
     }
 
-    public function getHelp(): string
+    public function getHelp(bool $detailed = true): string
     {
         $sig = "\n" . $this->name . " [group_name] [--parameters] [command]\n\n" . $this->desc . "\n";
         foreach ($this->commands as $command) {
-            $sig .= $command->getHelp();
+            $sig .= $command->getHelp($detailed);
         }
         foreach ($this->cliPresets as $preset) {
             $sig .= $preset->getHelp();
@@ -65,9 +65,14 @@ class T_CommandSet extends T_CommandGroup
 
     public function dispatch(array $argv, array &$arguments = [], $object = null): void
     {
+        if (($argv[0] ?? null) === "-h" || ($argv[0] ?? null) === "--help") {
+            echo $this->getHelp(true);
+            return;
+        }
+
         $command = $this->getNextCommand($argv, $arguments);
         if ($command === null) {
-            echo $this->getHelp();
+            echo $this->getHelp(false);
             return;
         }
         foreach ($this->commands as $cmd) {

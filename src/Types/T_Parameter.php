@@ -20,8 +20,12 @@ class T_Parameter
     }
 
     public function getHelp() : string {
-        $valueHint = $this->isBoolean() ? "" : " [value]";
-        return $this->getLongName() . $valueHint . " " . $this->description;
+        $valueHint = $this->isBoolean() ? "" : " <value>";
+        $parameter = $this->getLongName() . $valueHint;
+        if ($this->isOptional) {
+            $parameter = "[" . $parameter . "]";
+        }
+        return $parameter . " " . $this->description;
     }
 
     public function isBoolean() : bool {

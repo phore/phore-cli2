@@ -28,13 +28,15 @@ class T_Command
 
 
 
-    public function getHelp() : string {
+    public function getHelp(bool $detailed = true) : string {
         $argv = "";
         if ($this->hasArgvParameters)
             $argv = "\t[argv] ";
         $sig =  "\n\t" . $this->name . $argv . "\t" . $this->desc . "";
         foreach ($this->parameters as $parameter) {
-            $sig .= "\n\t\t" . $parameter->getHelp();
+            if ($detailed || ! $parameter->isOptional) {
+                $sig .= "\n\t\t" . $parameter->getHelp();
+            }
         }
         return $sig;
     }
@@ -145,6 +147,11 @@ class T_Command
     }
 
     public function dispatch(array $argv, array &$arguments, $object = null) : void {
+        if (in_array("-h", $argv, true) || in_array("--help", $argv, true)) {
+            echo $this->getHelp(true);
+            return;
+        }
+
         $curCmd = $this->getNextCommand($argv, $arguments);
         if ($curCmd !== null)
             array_unshift($argv, $curCmd);

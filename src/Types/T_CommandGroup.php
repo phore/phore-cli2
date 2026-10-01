@@ -23,11 +23,23 @@ class T_CommandGroup extends T_Command
 
     public function addCommand(T_Command $command): void
     {
-        if (isset($this->commandOwners[$command->name])) {
+        foreach ($this->commands as $existing) {
+            if ($existing->name !== $command->name) {
+                continue;
+            }
+
+            if ($existing instanceof self && $command instanceof self) {
+                $existing->merge($command);
+                return;
+            }
+
             throw new CliException("Command '{$this->name} {$command->name}' is already registered.");
         }
+
         $this->commands[] = $command;
-        $this->commandOwners[$command->name] = $this;
+        if (! $command instanceof self) {
+            $this->commandOwners[$command->name] = $this;
+        }
     }
 
     /**
@@ -37,15 +49,10 @@ class T_CommandGroup extends T_Command
      *
      * @param self $other Group whose distinct actions become available here.
      * @throws CliException On duplicate actions or conflicting Boolean options.
-     * @see \\Phore\\Cli\\Annotation\\CliScope
+     * @see \Phore\Cli\Annotation\CliScope
      */
     public function merge(self $other): void
     {
-        foreach ($other->commands as $command) {
-            if (isset($this->commandOwners[$command->name])) {
-                throw new CliException("Command '{$this->name} {$command->name}' is already registered.");
-            }
-        }
         foreach ($other->parameters as $parameter) {
             foreach ($this->parameters as $existing) {
                 if ($existing->name === $parameter->name && $existing->isBoolean() !== $parameter->isBoolean()) {
@@ -55,31 +62,65 @@ class T_CommandGroup extends T_Command
         }
 
         foreach ($other->commands as $command) {
+            $existing = $this->findCommand($command->name);
+            if ($existing !== null) {
+                if ($existing instanceof self && $command instanceof self) {
+                    $existing->merge($command);
+                    continue;
+                }
+
+                throw new CliException("Command '{$this->name} {$command->name}' is already registered.");
+            }
+
             $this->commands[] = $command;
-            $this->commandOwners[$command->name] = $other;
+            if (! $command instanceof self) {
+                $this->commandOwners[$command->name] = $other->commandOwners[$command->name] ?? $other;
+            }
         }
+
         foreach ($other->parameters as $parameter) {
-            if (!array_filter($this->parameters, fn(T_Parameter $existing) => $existing->name === $parameter->name)) {
+            if (! array_filter($this->parameters, fn(T_Parameter $existing) => $existing->name === $parameter->name)) {
                 $this->parameters[] = $parameter;
             }
         }
+
+        if ($this->reflectionClass === null && $other->reflectionClass !== null) {
+            $this->reflectionClass = $other->reflectionClass;
+        }
     }
 
-    public function getHelp(bool $detailed = true, int $nameWidth = 0): string
+    public function getHelp(bool $detailed = true, int $nameWidth = 0, bool $includeHint = true): string
     {
-        $stub = "\n" . $this->name . "\t" . $this->desc;
+        $hasChildren = $this->commands !== [];
+        $commandName = $this->name . ($hasChildren ? " [COMMAND]" : "");
+        $stub = "\n" . $commandName;
+
+        if ($this->desc !== '') {
+            $stub .= "\t" . $this->desc;
+        }
+
         foreach ($this->parameters as $parameter) {
             if ($detailed || ! $parameter->isOptional) {
                 $stub .= "\n\t" . $parameter->getHelp();
             }
         }
+
         $nameWidth = 0;
         foreach ($this->commands as $command) {
-            $nameWidth = max($nameWidth, strlen($command->name . ($command->hasArgvParameters ? " [argv]" : "")));
+            $suffix = $command instanceof self
+                ? " [COMMAND]"
+                : ($command->hasArgvParameters ? " [argv]" : "");
+            $nameWidth = max($nameWidth, strlen($command->name . $suffix));
         }
+
         foreach ($this->commands as $command) {
-            $stub .= $command->getHelp($detailed, $nameWidth);
+            $stub .= $command->getHelp($detailed, $nameWidth, false);
         }
+
+        if ($includeHint) {
+            $stub .= $this->getHelpHint();
+        }
+
         return $stub;
     }
 
@@ -95,29 +136,51 @@ class T_CommandGroup extends T_Command
             echo $this->getHelp(false);
             return;
         }
-        $owner = $this->commandOwners[$command] ?? null;
-        if ($owner === null) {
+
+        $selected = $this->findCommand($command);
+        if ($selected instanceof self) {
+            $selected->dispatch($argv, $arguments);
+            return;
+        }
+        if ($selected === null) {
             throw new CliException("Command '$command' not found.");
+        }
+
+        $owner = $this->commandOwners[$command] ?? null;
+        if ($owner === null || $owner->reflectionClass === null) {
+            throw new CliException("Command '$command' has no action owner.");
         }
 
         $reflection = $owner->reflectionClass;
         $instance = $reflection->newInstance(...$owner->buildParametersFor($reflection->getConstructor(), $arguments));
-        foreach ($this->commands as $action) {
-            if ($action->name === $command) {
-                $action->dispatch($argv, $arguments, $instance);
-                return;
+        $selected->dispatch($argv, $arguments, $instance);
+    }
+
+    private function findCommand(string $name): ?T_Command
+    {
+        foreach ($this->commands as $command) {
+            if ($command->name === $name) {
+                return $command;
             }
         }
+
+        return null;
     }
 
     public static function CreateFromClassName(string $className): self
     {
         $reflection = new \ReflectionClass($className);
         $attributes = $reflection->getAttributes(CliScope::class);
-        $name = $attributes === []
-            ? strtolower($reflection->getShortName())
-            : $attributes[0]->newInstance()->name;
-        $group = new self($name, '', $reflection);
+        $path = $attributes === []
+            ? [strtolower($reflection->getShortName())]
+            : $attributes[0]->newInstance()->getPath();
+
+        $leafName = array_pop($path);
+        if ($leafName === null) {
+            throw new CliException("Class '$className' has an empty CLI scope.");
+        }
+
+        $group = new self($leafName, '', $reflection);
 
         foreach ($reflection->getConstructor()?->getParameters() ?? [] as $parameter) {
             $group->addParameter(T_Parameter::CreateFromReflection($parameter));
@@ -127,6 +190,13 @@ class T_CommandGroup extends T_Command
                 $group->addCommand(T_Command::CreateFromReflection($method));
             }
         }
+
+        while (($parentName = array_pop($path)) !== null) {
+            $parent = new self($parentName);
+            $parent->addCommand($group);
+            $group = $parent;
+        }
+
         return $group;
     }
 }

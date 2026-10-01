@@ -153,8 +153,13 @@ class CliApplicationSpec extends ObjectBehavior
         $parent = new \\ReflectionMethod(\\Phore\\Cli\\Types\\T_Command::class, 'getHelp');
         $group = new \\ReflectionMethod(\\Phore\\Cli\\Types\\T_CommandGroup::class, 'getHelp');
 
+        $set = new \\ReflectionMethod(\\Phore\\Cli\\Types\\T_CommandSet::class, 'getHelp');
+
         if ($group->getNumberOfParameters() < $parent->getNumberOfParameters()) {
             throw new \\RuntimeException('T_CommandGroup::getHelp() must remain compatible with T_Command::getHelp().');
+        }
+        if ($set->getNumberOfParameters() < $group->getNumberOfParameters()) {
+            throw new \\RuntimeException('T_CommandSet::getHelp() must remain compatible with T_CommandGroup::getHelp().');
         }
     }
 

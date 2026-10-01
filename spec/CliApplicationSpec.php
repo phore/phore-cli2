@@ -2,6 +2,7 @@
 
 namespace spec\Phore\Cli;
 
+use Phore\Cli\Annotation\CliCommand;
 use Phore\Cli\Annotation\CliParameter;
 use Phore\Cli\Annotation\CliScope;
 use Phore\Cli\CliApplication;
@@ -17,6 +18,7 @@ class CreateAction
     {
     }
 
+    #[CliCommand('create', 'Creates a project')]
     public function create(#[CliParameter('template-dir')] string $templateDir): void
     {
         echo $this->workspace . ':' . $templateDir;
@@ -95,6 +97,22 @@ class CliApplicationSpec extends ObjectBehavior
         }
         if (str_contains($help, '--workspace')) {
             throw new \RuntimeException('Compact help must hide optional parameters.');
+        }
+    }
+
+    public function it_shows_command_description_and_options_hint_in_compact_help(): void
+    {
+        $this->addClass(CreateAction::class);
+
+        ob_start();
+        $this->run(['tool', 'project']);
+        $help = ob_get_clean();
+
+        if ( ! str_contains($help, 'create') || ! str_contains($help, 'Creates a project')) {
+            throw new \RuntimeException('Compact help must show CliCommand descriptions.');
+        }
+        if ( ! str_contains($help, '[OPTIONS]')) {
+            throw new \RuntimeException('Compact help must hint at optional parameters.');
         }
     }
 

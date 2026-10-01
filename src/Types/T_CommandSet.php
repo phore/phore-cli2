@@ -46,19 +46,30 @@ class T_CommandSet extends T_CommandGroup
         $this->cliPresets[] = $preset;
     }
 
-    public function getHelp(bool $detailed = true, int $nameWidth = 0): string
+    public function getHelp(bool $detailed = true, int $nameWidth = 0, bool $includeHint = true): string
     {
-        $sig = "\n" . $this->name . " [group_name] [--parameters] [command]\n\n" . $this->desc . "\n";
+        $sig = "\n" . $this->name . " [command] [sub-command] [--parameters]\n";
+
+        if ($this->desc !== '') {
+            $sig .= "\n" . $this->desc . "\n";
+        }
+
         $nameWidth = 0;
         foreach ($this->commands as $command) {
-            $nameWidth = max($nameWidth, strlen($command->name));
+            $suffix = $command instanceof T_CommandGroup ? " [COMMAND]" : "";
+            $nameWidth = max($nameWidth, strlen($command->name . $suffix));
         }
         foreach ($this->commands as $command) {
-            $sig .= $command->getHelp($detailed, $nameWidth);
+            $sig .= $command->getHelp($detailed, $nameWidth, false);
         }
         foreach ($this->cliPresets as $preset) {
             $sig .= $preset->getHelp();
         }
+
+        if ($includeHint) {
+            $sig .= $this->getHelpHint();
+        }
+
         return $sig;
     }
 

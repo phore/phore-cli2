@@ -52,7 +52,6 @@ php app.php app greet --name Matthias
 
 Weitere Übersicht: `.ai-usage-info.md`
 
-
 ## Eigene Instanz und gemeinsam genutzte Scopes
 
 `CliApplication` verwaltet eine eigene Command-Registry. `run()` nimmt wie
@@ -98,6 +97,62 @@ eigenen Klasse. Doppelte Action-Namen im selben Scope und widersprüchliche
 Typen gleichnamiger Scope-Optionen führen bei der Registrierung zu einem
 Fehler. `CliParameter` benennt nur die CLI-Option um; die Bindung an den
 PHP-Parameter erfolgt weiterhin über dessen PHP-Namen.
+
+## Sub-Commands und Scope-Optionen
+
+Ein `CliScope` kann als Pfad angegeben werden. Dadurch lassen sich beliebig
+verschachtelte Sub-Commands registrieren. Constructor-Parameter eines Scopes
+werden vor dem nächsten Command ausgewertet und stehen damit für alle darunter
+liegenden Commands zur Verfügung.
+
+```php
+#[CliScope('ai')]
+class AiCommands
+{
+    public function __construct(
+        #[CliParameter('config-file', 'Configuration file')]
+        private string $configFile = './config.yml'
+    ) {
+    }
+
+    public function status(): void
+    {
+        echo $this->configFile;
+    }
+}
+
+#[CliScope(['ai', 'edit'])]
+class AiEditCommands
+{
+    public function __construct(
+        #[CliParameter('model', 'Model name')]
+        private string $model = 'default'
+    ) {
+    }
+
+    public function run(): void
+    {
+        echo $this->model;
+    }
+}
+```
+
+Damit sind zum Beispiel diese Aufrufe möglich:
+
+```bash
+tool ai --config-file ./ai.yml status
+tool ai --config-file ./ai.yml edit --model gpt run
+tool ai -h
+tool ai edit -h
+```
+
+Die Help-Ausgabe zeigt vorhandene Sub-Commands mit `[COMMAND]` und endet mit
+einem Hinweis auf `-h`, über den die detaillierten Optionen der jeweiligen
+Ebene angezeigt werden.
+
+`CliCommand` benötigt nur einen Namen. Sowohl `desc` als auch `longDesc`
+sind optional und standardmäßig leer; bei fehlender Beschreibung wird kein
+Platzhalter in der Help-Ausgabe ausgegeben.
 
 ## Tests
 

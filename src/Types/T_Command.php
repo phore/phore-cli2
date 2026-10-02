@@ -28,11 +28,15 @@ class T_Command
         $this->parameters[] = $parameter;
     }
 
-    public function getHelp(bool $detailed = true, int $nameWidth = 0, bool $includeHint = true): string
-    {
+    public function getHelp(
+        bool $detailed = true,
+        int $nameWidth = 0,
+        bool $includeHint = true,
+        int $indent = 2
+    ): string {
         $argv = "";
         if ($this->hasArgvParameters) {
-            $argv = "\t[argv] ";
+            $argv = " [argv]";
         }
 
         $hasOptionalParameters = (bool) array_filter(
@@ -41,18 +45,19 @@ class T_Command
         );
         $options = ! $detailed && $hasOptionalParameters ? " [OPTIONS]" : "";
         $command = $this->name . $argv . $options;
-        $sig = "\n  " . str_pad($command, max($nameWidth, strlen($command)) + 2);
+        $indentation = str_repeat(" ", $indent);
+        $sig = "\n" . $indentation . str_pad($command, max($nameWidth, strlen($command)) + 4);
 
         if ($this->desc !== "") {
             $sig .= $this->desc;
         }
         if ($detailed && $this->longDesc !== "") {
-            $sig .= "\n\n  " . $this->longDesc;
+            $sig .= "\n\n" . $indentation . $this->longDesc;
         }
 
         foreach ($this->parameters as $parameter) {
             if ($detailed || ! $parameter->isOptional) {
-                $sig .= "\n    " . $parameter->getHelp();
+                $sig .= "\n" . str_repeat(" ", $indent + 2) . $parameter->getHelp();
             }
         }
 

@@ -46,8 +46,12 @@ class T_CommandSet extends T_CommandGroup
         $this->cliPresets[] = $preset;
     }
 
-    public function getHelp(bool $detailed = true, int $nameWidth = 0, bool $includeHint = true): string
-    {
+    public function getHelp(
+        bool $detailed = true,
+        int $nameWidth = 0,
+        bool $includeHint = true,
+        int $indent = 0
+    ): string {
         $sig = "\n" . $this->name . " [command] [sub-command] [--parameters]\n";
 
         if ($this->desc !== '') {
@@ -60,7 +64,7 @@ class T_CommandSet extends T_CommandGroup
             $nameWidth = max($nameWidth, strlen($command->name . $suffix));
         }
         foreach ($this->commands as $command) {
-            $sig .= $command->getHelp($detailed, $nameWidth, false);
+            $sig .= $command->getHelp($detailed, $nameWidth, false, 2);
         }
         foreach ($this->cliPresets as $preset) {
             $sig .= $preset->getHelp();

@@ -89,32 +89,39 @@ class T_CommandGroup extends T_Command
         }
     }
 
-    public function getHelp(bool $detailed = true, int $nameWidth = 0, bool $includeHint = true): string
-    {
+    public function getHelp(
+        bool $detailed = true,
+        int $nameWidth = 0,
+        bool $includeHint = true,
+        int $indent = 2
+    ): string {
         $hasChildren = $this->commands !== [];
         $commandName = $this->name . ($hasChildren ? " [COMMAND]" : "");
-        $stub = "\n" . $commandName;
+        $indentation = str_repeat(" ", $indent);
+        $stub = "\n" . $indentation . $commandName;
 
         if ($this->desc !== '') {
-            $stub .= "\t" . $this->desc;
+            $stub = "\n" . $indentation
+                . str_pad($commandName, max($nameWidth, strlen($commandName)) + 4)
+                . $this->desc;
         }
 
         foreach ($this->parameters as $parameter) {
             if ($detailed || ! $parameter->isOptional) {
-                $stub .= "\n\t" . $parameter->getHelp();
+                $stub .= "\n" . str_repeat(" ", $indent + 2) . $parameter->getHelp();
             }
         }
 
-        $nameWidth = 0;
+        $childNameWidth = 0;
         foreach ($this->commands as $command) {
             $suffix = $command instanceof self
                 ? " [COMMAND]"
                 : ($command->hasArgvParameters ? " [argv]" : "");
-            $nameWidth = max($nameWidth, strlen($command->name . $suffix));
+            $childNameWidth = max($childNameWidth, strlen($command->name . $suffix));
         }
 
         foreach ($this->commands as $command) {
-            $stub .= $command->getHelp($detailed, $nameWidth, false);
+            $stub .= $command->getHelp($detailed, $childNameWidth, false, $indent + 2);
         }
 
         if ($includeHint) {

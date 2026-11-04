@@ -88,6 +88,29 @@ class AiEditAction
     }
 }
 
+#[CliScope('tool')]
+class ExecutableCommands
+{
+    public function init(): void
+    {
+        echo 'initialized';
+    }
+}
+
+#[CliScope('edit')]
+class ExecutableEditCommands
+{
+    public function create(): void
+    {
+        echo 'created';
+    }
+
+    public function resolve(): void
+    {
+        echo 'resolved';
+    }
+}
+
 class CliApplicationSpec extends ObjectBehavior
 {
     public function it_combines_actions_from_classes_in_the_same_scope(): void
@@ -214,6 +237,75 @@ class CliApplicationSpec extends ObjectBehavior
         }
         if (! str_ends_with(trim($help), 'Use -h to show help and additional options.')) {
             throw new \RuntimeException('Help must end with the -h hint.');
+        }
+    }
+
+    public function it_treats_the_executable_name_as_an_implicit_scope(): void
+    {
+        $this->addClass(ExecutableCommands::class);
+        $this->addClass(ExecutableEditCommands::class);
+
+        ob_start();
+        $this->run(['/usr/local/bin/tool', 'init']);
+        $output = ob_get_clean();
+        if (trim($output) !== 'initialized') {
+            throw new \RuntimeException('Implicit executable scope did not dispatch init.');
+        }
+
+        ob_start();
+        $this->run(['/usr/local/bin/tool', 'edit', 'create']);
+        $output = ob_get_clean();
+        if (trim($output) !== 'created') {
+            throw new \RuntimeException('Independent edit scope did not dispatch create.');
+        }
+
+        ob_start();
+        $this->run(['tool', 'edit', 'resolve']);
+        $output = ob_get_clean();
+        if (trim($output) !== 'resolved') {
+            throw new \RuntimeException('Independent edit scope did not dispatch resolve.');
+        }
+
+        // The previous explicit scope form stays supported.
+        ob_start();
+        $this->run(['tool', 'tool', 'init']);
+        $output = ob_get_clean();
+        if (trim($output) !== 'initialized') {
+            throw new \RuntimeException('Explicit legacy scope must still work.');
+        }
+    }
+
+    public function it_flattens_only_the_executable_scope_in_help(): void
+    {
+        $this->addClass(ExecutableCommands::class);
+        $this->addClass(ExecutableEditCommands::class);
+
+        ob_start();
+        $this->run(['/usr/local/bin/tool', '-h']);
+        $help = ob_get_clean();
+        if (! str_contains($help, "\ntool [command]") || ! str_contains($help, 'init')
+            || ! str_contains($help, 'edit [COMMAND]')
+            || str_contains($help, "\n  tool [COMMAND]")) {
+            throw new \RuntimeException('Executable scope must be implicit in help.');
+        }
+
+        ob_start();
+        $this->run(['tool', 'edit', '-h']);
+        $help = ob_get_clean();
+        if (! str_contains($help, 'create') || ! str_contains($help, 'resolve')) {
+            throw new \RuntimeException('Edit subcommands must be discoverable in help.');
+        }
+    }
+
+    public function it_preserves_regular_explicit_scopes_without_a_matching_executable_scope(): void
+    {
+        $this->addClass(CreateAction::class);
+
+        ob_start();
+        $this->run(['tool', 'project', 'inspect', 'example']);
+        $output = ob_get_clean();
+        if (trim($output) !== 'example') {
+            throw new \RuntimeException('Other executable names must retain explicit scopes.');
         }
     }
 

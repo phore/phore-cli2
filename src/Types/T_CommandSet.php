@@ -58,12 +58,15 @@ class T_CommandSet extends T_CommandGroup
             $sig .= "\n" . $this->desc . "\n";
         }
 
+        // Der Scope des Executables wird in der Hilfe als Programmebene
+        // angezeigt; Untergruppen wie edit bleiben explizit sichtbar.
+        $visibleCommands = $this->commandsForExecutable();
         $nameWidth = 0;
-        foreach ($this->commands as $command) {
+        foreach ($visibleCommands as $command) {
             $suffix = $command instanceof T_CommandGroup ? " [COMMAND]" : "";
             $nameWidth = max($nameWidth, strlen($command->name . $suffix));
         }
-        foreach ($this->commands as $command) {
+        foreach ($visibleCommands as $command) {
             $sig .= $command->getHelp($detailed, $nameWidth, false, 2);
         }
         foreach ($this->cliPresets as $preset) {
@@ -75,6 +78,26 @@ class T_CommandSet extends T_CommandGroup
         }
 
         return $sig;
+    }
+
+    /**
+     * Shows commands of a scope named like the executable at the root level.
+     *
+     * Other scopes remain unaffected; the original registry is not mutated.
+     *
+     * @return T_Command[]
+     */
+    private function commandsForExecutable(): array
+    {
+        $commands = [];
+        foreach ($this->commands as $command) {
+            if ($command instanceof T_CommandGroup && $command->name === $this->name) {
+                array_push($commands, ...$command->commands);
+                continue;
+            }
+            $commands[] = $command;
+        }
+        return $commands;
     }
 
     public function setName($name)
@@ -94,9 +117,19 @@ class T_CommandSet extends T_CommandGroup
             echo $this->getHelp(false);
             return;
         }
+        // Explizite Top-Level-Scopes behalten Vorrang.
         foreach ($this->commands as $cmd) {
             if ($cmd->name === $command) {
                 $cmd->dispatch($argv, $arguments, $object);
+                return;
+            }
+        }
+
+        // Ein Scope mit dem Namen des Executables ist implizit aktiv.
+        // Dadurch braucht der Launcher keine doppelten argv-Tokens.
+        foreach ($this->commands as $cmd) {
+            if ($cmd instanceof T_CommandGroup && $cmd->name === $this->name) {
+                $cmd->dispatch([$command, ...$argv], $arguments, $object);
                 return;
             }
         }

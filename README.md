@@ -98,6 +98,54 @@ Typen gleichnamiger Scope-Optionen führen bei der Registrierung zu einem
 Fehler. `CliParameter` benennt nur die CLI-Option um; die Bindung an den
 PHP-Parameter erfolgt weiterhin über dessen PHP-Namen.
 
+## Executable-Name und impliziter Scope
+
+`CliApplication::run($argv)` bestimmt den Programmnamen aus dem Basename
+von `$argv[0]`. Ein registrierter `CliScope` mit genau diesem Namen ist
+automatisch die Programmebene; seine Actions sind ohne Wiederholung des
+Programnamens erreichbar. Andere Scopes bleiben eigenständige Gruppen.
+
+Beispielsweise kann das Executable `tool` die folgenden Klassen registrieren:
+
+```php
+#[CliScope('tool')]
+class GeneralCommands
+{
+    public function init(): void
+    {
+        echo 'Initialized';
+    }
+}
+
+#[CliScope('edit')]
+class EditCommands
+{
+    public function create(): void
+    {
+        echo 'Created';
+    }
+
+    public function resolve(): void
+    {
+        echo 'Resolved';
+    }
+}
+```
+
+```php
+$app = new CliApplication();
+$app->addClass(GeneralCommands::class);
+$app->addClass(EditCommands::class);
+$app->run($argv);
+```
+
+Damit sind `tool init`, `tool edit create` und `tool edit resolve`
+möglich, ohne den Programmnamen künstlich in `$argv` einzufügen. Die
+Hilfe unter `tool -h` zeigt die Actions des impliziten Scopes direkt.
+Aufrufe mit explizitem Scope wie `tool tool init` bleiben möglich.
+Ein Executable ohne namensgleichen Scope verwendet weiterhin die
+bisherigen expliziten Gruppen.
+
 ## Sub-Commands und Scope-Optionen
 
 Ein `CliScope` kann als Pfad angegeben werden. Dadurch lassen sich beliebig

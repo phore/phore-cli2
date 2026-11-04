@@ -51,8 +51,9 @@ class CliApplication
     /**
      * Executes argv and writes command or help output directly to the current output stream.
      *
-     * The first element is the executable name. Exceptions propagate to the
-     * caller. The method deliberately does not start or manipulate PHP output
+     * The first element is the executable path or name. A registered scope
+     * matching its basename is implicitly available at the command root.
+     * Exceptions propagate to the caller. The method deliberately does not start or manipulate PHP output
      * buffering, so embedding applications retain full control over output.
      *
      * Example: $app->run(['tool', 'project', 'create', '--name', 'demo']);
@@ -65,7 +66,7 @@ class CliApplication
     public function run(array $argv): void
     {
         $name = array_shift($argv);
-        $this->commandSet->setName($name ?? '');
+        $this->commandSet->setName(basename($name ?? ''));
 
         $presetContainer = new CliPreset();
         $presetFile = getcwd() . '/cli_presets.ini';
